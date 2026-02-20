@@ -33,7 +33,13 @@ func main() {
 	r.Get("/", 	func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World"))
 	})
-	r.Post("/signup", configWrapper(dbQueries, auth.SignupWithEmailAndPassword))
+	authRouter := chi.NewRouter()
+	authRouter.Post("/signup", configWrapper(dbQueries, auth.SignupWithEmailAndPassword))
+	authRouter.Post("/login", configWrapper(dbQueries, auth.LoginWithEmailAndPassword))
+	r.Mount("/auth", authRouter)
 	log.Println("Server started on port " + port)
-	http.ListenAndServe(":"+port, r)
+	err = http.ListenAndServe(":"+port, r)
+	if err != nil{
+		log.Fatal(err)
+	}
 }
