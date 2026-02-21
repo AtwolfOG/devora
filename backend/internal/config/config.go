@@ -12,6 +12,8 @@ type Config struct {
 	DatabaseURL string
 	JWTSecret []byte
 	DB *database.Queries
+	GithubClientId string
+	GithubClientSecret string
 }
 
 func LoadConfig() *Config {
@@ -22,5 +24,7 @@ func LoadConfig() *Config {
 	return &Config{
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		JWTSecret: []byte(os.Getenv("JWT_SECRET")),
+		GithubClientId: os.Getenv("GITHUB_CLIENT_ID"),
+		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
 	}
 }
