@@ -66,8 +66,7 @@ type GithubOauth struct {
 type RefreshToken struct {
 	Token     string
 	UserID    uuid.UUID
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	ExpiresAt time.Time
 }
 
 type User struct {

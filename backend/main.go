@@ -52,6 +52,7 @@ func main() {
 	authRouter.Post("/login", configWrapper(config, auth.LoginWithEmailAndPassword))
 	authRouter.Get("/github/callback", configWrapper(config, auth.LoginWithGithub))
 	authRouter.Get("/verify/{code}", configWrapper(config, auth.VerifyEmail))
+	authRouter.Get("/refresh", configWrapper(config, auth.RefreshToken))
 	r.Mount("/auth", authRouter)
 	log.Println("Server started on port " + port)
 	err = http.ListenAndServe(":"+port, r)

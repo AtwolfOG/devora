@@ -1,5 +1,5 @@
 -- name: CreateRefreshToken :exec
-INSERT INTO refresh_token (token, user_id) VALUES ($1, $2);
+INSERT INTO refresh_token (token, user_id, expires_at) VALUES ($1, $2, $3);
 
 -- name: GetRefreshToken :one
 SELECT * FROM refresh_token WHERE token = $1;

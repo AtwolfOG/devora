@@ -42,7 +42,7 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 	err = cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
 		Token: refreshToken,
 		UserID: userId,
-		
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
 	})
 	if err != nil {
 		http.Error(w, "Failed to create refresh token", http.StatusInternalServerError)
@@ -58,7 +58,7 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 		Value: refreshToken,
 		HttpOnly: true,
 		// TODO: set to true for production
-		Secure: false,
+		Secure: cfg.Environment != "development",
 		SameSite: http.SameSiteLaxMode,
 		Path: "/",
 		MaxAge: 60 * 60 * 24 * 7,
@@ -72,3 +72,40 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 	})
 }
 
+
+func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		http.Error(w, "Failed to get refresh token", http.StatusBadRequest)
+		return
+	}
+	refreshToken, err := cfg.DB.GetRefreshToken(r.Context(), cookie.Value)
+	if err != nil {
+		cookie.MaxAge = -1
+		http.SetCookie(w, cookie)
+		cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value)
+		http.Error(w, "Failed to get refresh token", http.StatusUnauthorized)
+		return
+	}
+	
+	user, err := cfg.DB.GetUserById(r.Context(), refreshToken.UserID)
+	if err != nil {
+		cookie.MaxAge = -1
+		http.SetCookie(w, cookie)
+		cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value)
+		http.Error(w, "Failed to get user", http.StatusUnauthorized)
+		return
+	}
+	
+	token, err := GenerateJWT(user.ID.String(), []byte(cfg.JWTSecret), 1 * time.Hour)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"access_token": token,
+	})
+	
+}

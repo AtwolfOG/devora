@@ -19,6 +19,7 @@ type Config struct {
 	BaseURL string
 	Domain string
 	AppName string
+	Environment string
 }
 
 func LoadConfig() *Config {
@@ -36,5 +37,6 @@ func LoadConfig() *Config {
 		BaseURL: os.Getenv("BASE_URL"),
 		Domain: os.Getenv("DOMAIN"),
 		AppName: os.Getenv("APP_NAME"),
+		Environment: os.Getenv("ENVIRONMENT"),
 	}
 }
