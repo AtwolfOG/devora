@@ -14,6 +14,11 @@ type Config struct {
 	DB *database.Queries
 	GithubClientId string
 	GithubClientSecret string
+	SmtpUser string
+	SmtpPassword string
+	BaseURL string
+	Domain string
+	AppName string
 }
 
 func LoadConfig() *Config {
@@ -26,5 +31,10 @@ func LoadConfig() *Config {
 		JWTSecret: []byte(os.Getenv("JWT_SECRET")),
 		GithubClientId: os.Getenv("GITHUB_CLIENT_ID"),
 		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+		SmtpUser: os.Getenv("SMTP_USER"),
+		SmtpPassword: os.Getenv("SMTP_PASSWORD"),
+		BaseURL: os.Getenv("BASE_URL"),
+		Domain: os.Getenv("DOMAIN"),
+		AppName: os.Getenv("APP_NAME"),
 	}
 }

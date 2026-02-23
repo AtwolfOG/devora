@@ -50,7 +50,7 @@ type UserResponse struct {
 	Email string `json:"email"`
 	AvatarUrl string `json:"avatar_url"`
 }
-func getUser(token string, cfg *config.Config) (*UserResponse, error){
+func getUser(token string) (*UserResponse, error){
 	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 	if err != nil {
 		return nil, err 
@@ -83,11 +83,22 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
 		return
 	}
-	userResponse, err := getUser(tokenResponse.AccessToken, cfg)
+	userResponse, err := getUser(tokenResponse.AccessToken)
 	if err != nil {
 		http.Error(w, "Failed to get user: " + err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	existingUsers, err := cfg.DB.GetUsersByEmail(r.Context(), userResponse.Email)
+	if err != nil {
+		http.Error(w, "Failed to check if user exists", http.StatusInternalServerError)
+		return
+	}
+	if len(existingUsers) > 0 {
+		http.Error(w, "User already exists", http.StatusConflict)
+		return
+	}
+
 	userId := uuid.New()
 	err = cfg.DB.CreateUserWithGithub(r.Context(), database.CreateUserWithGithubParams{
 		ID: userId,

@@ -3,8 +3,12 @@ package auth
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
+	"github.com/AtwolfOG/devora/internal/auth/email"
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
 	"github.com/google/uuid"
@@ -35,7 +39,7 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		http.Error(w, "Invalid email", http.StatusBadRequest)
 		return
 	}
-
+	req.Email = strings.ToLower(req.Email)
 	if !IsValidPassword(req.Password) {
 		http.Error(w, "try a stronger password", http.StatusBadRequest)
 		return
@@ -44,6 +48,16 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 	HashedPassword, err := HashPassword(req.Password)
 	if err != nil {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		return
+	}
+	
+	existingUsers, err := cfg.DB.GetUsersByEmail(r.Context(), req.Email)
+	if err != nil {
+		http.Error(w, "Failed to check if user exists", http.StatusInternalServerError)
+		return
+	}
+	if len(existingUsers) > 0 {
+		http.Error(w, "User already exists", http.StatusConflict)
 		return
 	}
 	
@@ -58,6 +72,38 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
-	// this is to send the refresh and access token to the client through cookies and response body
-	SendRefreshAndAccessToken(w, r, cfg, userId)
+
+	verificationCode := GenerateVerificationCode()
+	err = cfg.DB.CreateVerificationLink(r.Context(), database.CreateVerificationLinkParams{
+		UserID: userId,
+		Code: verificationCode,
+		ExpiresAt: time.Now().Add(15 * time.Minute),
+	})
+	if err != nil {
+		http.Error(w, "Failed to create verification link", http.StatusInternalServerError)
+		return
+	}
+	// send verification email
+	verificationLink := fmt.Sprintf("%s/auth/verify/%s", cfg.BaseURL, verificationCode)
+	
+	tmpl, err := email.CreateTemplate(email.EmailData{
+		AppName: cfg.AppName,
+		VerificationLink: verificationLink,
+		RecipientName: req.Email,
+		ExpiryMinutes: 15,
+		Year: time.Now().Year(),
+	})
+	if err != nil {
+		http.Error(w, "Failed to create verification email", http.StatusInternalServerError)
+		return
+	}
+	err = email.SendEmail(cfg, req.Email, tmpl)
+	if err != nil {
+		http.Error(w, "Failed to send verification email", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Verification email sent",
+	})
 }

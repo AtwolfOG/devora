@@ -21,6 +21,14 @@ func GenerateRefreshToken() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
+func GenerateVerificationCode() string {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return ""
+	}
+	return base64.URLEncoding.EncodeToString(b)
+}
 type SignupResponse struct {
 	AccessToken string `json:"access_token"`
 }
@@ -63,3 +71,4 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 		AccessToken: token,
 	})
 }
+

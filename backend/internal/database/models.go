@@ -81,3 +81,9 @@ type User struct {
 	ProfilePictureUrl string
 	Auth              AuthType
 }
+
+type VerificationLink struct {
+	UserID    uuid.UUID
+	Code      string
+	ExpiresAt time.Time
+}

@@ -107,6 +107,43 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 	return i, err
 }
 
+const getUsersByEmail = `-- name: GetUsersByEmail :many
+SELECT id, email, name, created_at, updated_at, password, pending, profile_picture_url, auth FROM users WHERE email = $1
+`
+
+func (q *Queries) GetUsersByEmail(ctx context.Context, email string) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersByEmail, email)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Password,
+			&i.Pending,
+			&i.ProfilePictureUrl,
+			&i.Auth,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setPendingStatus = `-- name: SetPendingStatus :exec
 UPDATE users SET pending = $1 WHERE id = $2
 `
