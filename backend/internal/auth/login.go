@@ -3,10 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
-	"os"
-	"time"
 
-	"github.com/AtwolfOG/devora/internal/database"
+	"github.com/AtwolfOG/devora/internal/config"
 )
 
 type LoginRequest struct {
@@ -14,7 +12,7 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, db *database.Queries) {
+func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -37,7 +35,7 @@ func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, db *datab
 		return
 	}
 
-	user, err := db.GetUserByEmail(r.Context(), req.Email)
+	user, err := cfg.DB.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
@@ -48,27 +46,6 @@ func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, db *datab
 		return
 	}
 
-	token, err := GenerateJWT(req.Email, []byte(os.Getenv("JWT_SECRET")), 24 * time.Hour)
-	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		return
-	}
-	refreshToken, err := GenerateRefreshToken()
-	if err != nil {
-		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
-		return
-	}
-	cookie := http.Cookie{
-		Name: "refresh_token",
-		Value: refreshToken,
-		Expires: time.Now().Add(7 * 24 * time.Hour),
-		HttpOnly: true,
-		Secure: true,
-		SameSite: http.SameSiteLaxMode,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	http.SetCookie(w, &cookie)
-	json.NewEncoder(w).Encode(SignupResponse{
-		AccessToken: token,
-	})	
+	// this is to send the refresh and access token to the client
+	SendRefreshAndAccessToken(w, r, cfg, user.ID)
 }

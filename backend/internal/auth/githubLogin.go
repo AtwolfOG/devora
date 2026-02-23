@@ -5,9 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
@@ -109,37 +107,6 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		http.Error(w, "Failed to create github oauth", http.StatusInternalServerError)
 		return
 	}
-	token, err := GenerateJWT(userId.String(), []byte(os.Getenv("JWT_SECRET")), 1 * time.Hour)
-	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		return
-	}
-	refreshToken, err := GenerateRefreshToken()
-	if err != nil {
-		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
-		return
-	}
-	err = cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
-		Token: refreshToken,
-		UserID: userId,
-	})
-	if err != nil {
-		http.Error(w, "Failed to create refresh token", http.StatusInternalServerError)
-		return
-	}
-	cookie := http.Cookie{
-		Name: "refresh_token",
-		Value: refreshToken,
-		Expires: time.Now().Add(7 * 24 * time.Hour),
-		HttpOnly: true,
-		// TODO: set to true for production
-		Secure: false,
-		SameSite: http.SameSiteStrictMode,
-	}
-	http.SetCookie(w, &cookie)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(SignupResponse{
-		AccessToken: token,
-	})
+	// this is to send the refresh and access token to the client through cookies and response body
+	SendRefreshAndAccessToken(w, r, cfg, userId)
 }

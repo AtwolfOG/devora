@@ -48,8 +48,8 @@ func main() {
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<a href='https://github.com/login/oauth/authorize?client_id=" + config.GithubClientId + "'>Login with Github</a>"))
 	})
-	authRouter.Post("/signup", dbWrapper(dbQueries, auth.SignupWithEmailAndPassword))
-	authRouter.Post("/login", dbWrapper(dbQueries, auth.LoginWithEmailAndPassword))
+	authRouter.Post("/signup", configWrapper(config, auth.SignupWithEmailAndPassword))
+	authRouter.Post("/login", configWrapper(config, auth.LoginWithEmailAndPassword))
 	authRouter.Get("/github/callback", configWrapper(config, auth.LoginWithGithub))
 	r.Mount("/auth", authRouter)
 	log.Println("Server started on port " + port)
