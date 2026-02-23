@@ -20,7 +20,7 @@ type CreateUserWithEmailPasswordParams struct {
 	ID       uuid.UUID
 	Email    string
 	Password sql.NullString
-	Name     sql.NullString
+	Name     string
 }
 
 func (q *Queries) CreateUserWithEmailPassword(ctx context.Context, arg CreateUserWithEmailPasswordParams) error {
@@ -33,8 +33,40 @@ func (q *Queries) CreateUserWithEmailPassword(ctx context.Context, arg CreateUse
 	return err
 }
 
+const createUserWithGithub = `-- name: CreateUserWithGithub :exec
+INSERT INTO users (id, name, email, profile_picture_url, auth, created_at, updated_at) VALUES ($1, $2, $3, $4, 'github', NOW(), NOW())
+`
+
+type CreateUserWithGithubParams struct {
+	ID                uuid.UUID
+	Name              string
+	Email             string
+	ProfilePictureUrl string
+}
+
+func (q *Queries) CreateUserWithGithub(ctx context.Context, arg CreateUserWithGithubParams) error {
+	_, err := q.db.ExecContext(ctx, createUserWithGithub,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.ProfilePictureUrl,
+	)
+	return err
+}
+
+const getPendingStatus = `-- name: GetPendingStatus :one
+SELECT pending FROM users WHERE id = $1
+`
+
+func (q *Queries) GetPendingStatus(ctx context.Context, id uuid.UUID) (sql.NullBool, error) {
+	row := q.db.QueryRowContext(ctx, getPendingStatus, id)
+	var pending sql.NullBool
+	err := row.Scan(&pending)
+	return pending, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, created_at, updated_at, password FROM users WHERE email = $1
+SELECT id, email, name, created_at, updated_at, password, pending, profile_picture_url, auth FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -47,6 +79,44 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Password,
+		&i.Pending,
+		&i.ProfilePictureUrl,
+		&i.Auth,
 	)
 	return i, err
+}
+
+const getUserById = `-- name: GetUserById :one
+SELECT id, email, name, created_at, updated_at, password, pending, profile_picture_url, auth FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Password,
+		&i.Pending,
+		&i.ProfilePictureUrl,
+		&i.Auth,
+	)
+	return i, err
+}
+
+const setPendingStatus = `-- name: SetPendingStatus :exec
+UPDATE users SET pending = $1 WHERE id = $2
+`
+
+type SetPendingStatusParams struct {
+	Pending sql.NullBool
+	ID      uuid.UUID
+}
+
+func (q *Queries) SetPendingStatus(ctx context.Context, arg SetPendingStatusParams) error {
+	_, err := q.db.ExecContext(ctx, setPendingStatus, arg.Pending, arg.ID)
+	return err
 }

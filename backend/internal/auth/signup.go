@@ -50,18 +50,18 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, db *data
 		return
 	}
 	
+	userId := uuid.New()
 	err = db.CreateUserWithEmailPassword(r.Context(), database.CreateUserWithEmailPasswordParams{
-		ID: uuid.New(),
+		ID: userId,
 		Email: req.Email,
 		Password: sql.NullString{String: HashedPassword, Valid: true},
-		Name: sql.NullString{String: req.Name, Valid: true},
+		Name: req.Name,
 	})
 	if err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	token, err := GenerateJWT(req.Email, []byte(os.Getenv("JWT_SECRET")), 1 * time.Hour)
+	token, err := GenerateJWT(userId.String(), []byte(os.Getenv("JWT_SECRET")), 1 * time.Hour)
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
@@ -71,15 +71,26 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, db *data
 		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
 		return
 	}
+	err = db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token: refreshToken,
+		UserID: userId,
+	})
+	if err != nil {
+		http.Error(w, "Failed to create refresh token", http.StatusInternalServerError)
+		return
+	}
 	cookie := http.Cookie{
 		Name: "refresh_token",
 		Value: refreshToken,
 		Expires: time.Now().Add(7 * 24 * time.Hour),
 		HttpOnly: true,
-		Secure: true,
+		// TODO: set to true for production
+		Secure: false,
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, &cookie)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(SignupResponse{
 		AccessToken: token,
 	})

@@ -36,13 +36,21 @@ func main() {
 	dbQueries := database.New(db)
 	config.DB = dbQueries
 
-	r.Get("/", 	func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World"))
-	})
 	authRouter := chi.NewRouter()
+	// this is for testing purposes
+	authRouter.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Println(r.URL.Path)
+			next.ServeHTTP(w, r)
+		})
+	})
+	// this is for testing purposes
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("<a href='https://github.com/login/oauth/authorize?client_id=" + config.GithubClientId + "'>Login with Github</a>"))
+	})
 	authRouter.Post("/signup", dbWrapper(dbQueries, auth.SignupWithEmailAndPassword))
 	authRouter.Post("/login", dbWrapper(dbQueries, auth.LoginWithEmailAndPassword))
-	authRouter.Get("/github", configWrapper(config, auth.LoginWithGithub))
+	authRouter.Get("/github/callback", configWrapper(config, auth.LoginWithGithub))
 	r.Mount("/auth", authRouter)
 	log.Println("Server started on port " + port)
 	err = http.ListenAndServe(":"+port, r)

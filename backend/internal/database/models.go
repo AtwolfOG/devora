@@ -6,16 +6,78 @@ package database
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+type AuthType string
+
+const (
+	AuthTypeEmail  AuthType = "email"
+	AuthTypeGithub AuthType = "github"
+	AuthTypeNone   AuthType = "none"
+)
+
+func (e *AuthType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AuthType(s)
+	case string:
+		*e = AuthType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AuthType: %T", src)
+	}
+	return nil
+}
+
+type NullAuthType struct {
+	AuthType AuthType
+	Valid    bool // Valid is true if AuthType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAuthType) Scan(value interface{}) error {
+	if value == nil {
+		ns.AuthType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AuthType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAuthType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AuthType), nil
+}
+
+type GithubOauth struct {
+	GithubID  int32
+	UserID    uuid.UUID
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+}
+
+type RefreshToken struct {
+	Token     string
+	UserID    uuid.UUID
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+}
+
 type User struct {
-	ID        uuid.UUID
-	Email     string
-	Name      sql.NullString
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Password  sql.NullString
+	ID                uuid.UUID
+	Email             string
+	Name              string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Password          sql.NullString
+	Pending           sql.NullBool
+	ProfilePictureUrl string
+	Auth              AuthType
 }
