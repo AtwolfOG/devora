@@ -8,7 +8,9 @@ import (
 	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
+	"github.com/AtwolfOG/devora/room"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/lib/pq"
 )
 
@@ -36,6 +38,7 @@ func main() {
 	dbQueries := database.New(db)
 	config.DB = dbQueries
 
+	r.Use(middleware.Logger)
 	authRouter := chi.NewRouter()
 	// this is for testing purposes
 	authRouter.Use(func(next http.Handler) http.Handler {
@@ -54,6 +57,19 @@ func main() {
 	authRouter.Get("/verify/{code}", configWrapper(config, auth.VerifyEmail))
 	authRouter.Get("/refresh", configWrapper(config, auth.RefreshToken))
 	r.Mount("/auth", authRouter)
+	apiRouter := chi.NewRouter()
+	apiRouter.Use(auth.AuthMiddleware)
+	// this is the room api
+	roomRouter := chi.NewRouter()
+	roomRouter.Get("/", configWrapper(config, room.GetRooms))
+	roomRouter.Post("/create", configWrapper(config, room.CreateRoom))
+	roomRouter.Get("/{room_id}", configWrapper(config, room.GetRoomByID))
+	roomRouter.Delete("/{room_id}", configWrapper(config, room.DeleteRoom))
+	roomRouter.Post("/questions", configWrapper(config, room.CreateQuestions))
+	roomRouter.Get("/questions/{room_id}", configWrapper(config, room.GetRoomQuestions))
+	roomRouter.Delete("/questions/{room_id}/{question_id}", configWrapper(config, room.DeleteQuestion))
+	apiRouter.Mount("/room", roomRouter)
+	r.Mount("/api", apiRouter)
 	log.Println("Server started on port " + port)
 	err = http.ListenAndServe(":"+port, r)
 	if err != nil{

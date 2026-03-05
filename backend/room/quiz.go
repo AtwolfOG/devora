@@ -1,0 +1,133 @@
+package room
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"github.com/AtwolfOG/devora/internal/config"
+	"github.com/AtwolfOG/devora/internal/database"
+	"github.com/AtwolfOG/devora/lib"
+	"github.com/google/uuid"
+)
+
+type CreateQuestionsRequest struct {
+	RoomID string `json:"room_id"`
+	Questions []string `json:"questions"`
+}
+
+func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	var req CreateQuestionsRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	// get user id from request context
+	userId, err := lib.GetIdFromReqCtx(r)
+	if err != nil {
+		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
+		return
+	}
+	// get room uuid
+	roomUUID, err := uuid.Parse(req.RoomID)
+	if err != nil {
+		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		return
+	}
+	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		http.Error(w, "Failed to get room", http.StatusInternalServerError)
+		return
+	}
+	// check if user is the owner of the room
+	if room.OwnerID != userId {
+		http.Error(w, "You are not the owner of this room", http.StatusUnauthorized)
+		return
+	}
+	// check if room is active
+	if !room.IsActive {
+		http.Error(w, "Room is not active", http.StatusBadRequest)
+		return
+	}
+	for _, question := range req.Questions {
+		err = cfg.DB.CreateQuestion(r.Context(), database.CreateQuestionParams{
+			RoomID: roomUUID,
+			Question: question,
+		})
+		if err != nil {
+			http.Error(w, "Failed to create question", http.StatusInternalServerError)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Questions created successfully",
+	})
+}
+
+func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	roomId := r.PathValue("room_id")
+	if roomId == "" {
+		http.Error(w, "Missing room id", http.StatusBadRequest)
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		return
+	}
+	questions, err := cfg.DB.GetQuestionsByRoomID(r.Context(), roomUUID)
+	if err != nil {
+		http.Error(w, "Failed to get questions", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(questions)
+}
+
+func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	questionId := r.PathValue("question_id")
+	roomId := r.PathValue("room_id")
+	if questionId == "" || roomId == "" {
+		http.Error(w, "Missing question id or room id", http.StatusBadRequest)
+		return
+	}
+	questionIdInt, err := strconv.Atoi(questionId)
+	if err != nil {
+		http.Error(w, "Failed to parse question id", http.StatusBadRequest)
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		return
+	}
+	// get user id from request context
+	userId, err := lib.GetIdFromReqCtx(r)
+	if err != nil {
+		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
+		return
+	}
+	// check if user is the owner of the room
+	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		http.Error(w, "Failed to get room", http.StatusInternalServerError)
+		return
+	}
+	if room.OwnerID != userId {
+		http.Error(w, "You are not the owner of this room", http.StatusUnauthorized)
+		return
+	}
+	
+	err = cfg.DB.DeleteQuestion(r.Context(), database.DeleteQuestionParams{
+		ID: int32(questionIdInt),
+		RoomID: roomUUID,
+	})
+	if err != nil {
+		http.Error(w, "Failed to delete question", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}

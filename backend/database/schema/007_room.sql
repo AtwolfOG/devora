@@ -1,0 +1,15 @@
+-- +goose Up
+CREATE TABLE room (
+	id UUID PRIMARY KEY,
+	name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    owner_id UUID NOT NULL,
+	start_time TIMESTAMP NOT NULL,
+	is_active BOOLEAN DEFAULT TRUE NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- +goose Down
+DROP TABLE room;

@@ -60,6 +60,7 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		http.Error(w, "User already exists", http.StatusConflict)
 		return
 	}
+	// TODO: allow user to recreate account with new password if the account is not verified yet
 	
 	userId := uuid.New()
 	err = cfg.DB.CreateUserWithEmailPassword(r.Context(), database.CreateUserWithEmailPasswordParams{

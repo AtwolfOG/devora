@@ -27,8 +27,8 @@ func TestVerifyJWT(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if claims.Email != "[EMAIL_ADDRESS]" {
-		t.Error("email is not matching")
+	if claims.Id != "[EMAIL_ADDRESS]" {
+		t.Error("id is not matching")
 	}
 	if claims.Issuer != "devora" {
 		t.Error("issuer is not matching")
@@ -52,8 +52,8 @@ func TestExpiredJWT(t *testing.T) {
 	if err == nil {
 		t.Error("token is not expired")
 	}
-	if claims.Email != "[EMAIL_ADDRESS]" {
-		t.Error("email is not matching")
+	if claims.Id != "[EMAIL_ADDRESS]" {
+		t.Error("id is not matching")
 	}
 	if claims.Issuer != "devora" {
 		t.Error("issuer is not matching")

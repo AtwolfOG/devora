@@ -63,10 +63,31 @@ type GithubOauth struct {
 	UpdatedAt sql.NullTime
 }
 
+type Question struct {
+	ID        int32
+	RoomID    uuid.UUID
+	Question  string
+	Done      bool
+	Passed    bool
+	CreatedAt sql.NullTime
+	UpdatedAt sql.NullTime
+}
+
 type RefreshToken struct {
 	Token     string
 	UserID    uuid.UUID
 	ExpiresAt time.Time
+}
+
+type Room struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	OwnerID     uuid.UUID
+	StartTime   time.Time
+	IsActive    bool
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
 }
 
 type User struct {
