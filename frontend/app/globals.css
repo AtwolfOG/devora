@@ -34,6 +34,11 @@
   }
 } */
 
+@media (max-width: 768px) {
+  :root{
+    font-size: 14px;
+  }
+}
 body {
   background: var(--background);
   color: var(--foreground);
@@ -42,8 +47,8 @@ body {
 h1{
   font-size: 4.5rem;
   font-weight: 500;
-  line-height: 1.2;
-  /* letter-spacing: -0.02em; */
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 h2{
   font-size: 3.5rem;
