@@ -1,11 +1,9 @@
 "use client"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react";
-
-import { Observer } from "gsap/Observer";
-import { ScrollTrigger } from "gsap/ScrollTrigger"
 import Image from "next/image";
 import { useRef, type JSX } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const featuresData: featureType[] = [
     {
@@ -34,31 +32,30 @@ const featuresData: featureType[] = [
     },
 ]
 
-gsap.registerPlugin(ScrollTrigger, useGSAP, Observer)
-console.log(Observer)
+gsap.registerPlugin(useGSAP)
 export default function Features() {
     const divRef = useRef<HTMLDivElement>(null)
+    const nextBtn = useRef<HTMLDivElement>(null)
+    const prevBtn = useRef<HTMLDivElement>(null)
     useGSAP((_, contextSafe)=>{
-        if (!contextSafe) return;
-        // const mm: gsap.MatchMedia = gsap.matchMedia()
-        // mm.add("min-width: ")
+            if (!contextSafe) return;
+            const gotoSection = (()=>{
         let isAnimating = false;
         let currentIndex  = 0;
+        
         const cards: HTMLElement[] = gsap.utils.toArray(".cards");
         const imageWrapper: HTMLElement[] = gsap.utils.toArray(".image-wrapper")
         const sections: HTMLElement[] = gsap.utils.toArray(".sections")
         gsap.set(sections[0], {
             autoAlpha: 1,
         })
-        const gotoSection = contextSafe((index: number, direction: number)=>{
-        console.log("works")
+        return contextSafe(( direction: number)=>{
             if (isAnimating) return;
+            const index = currentIndex + direction;
             if (index < 0 && direction == -1){
-                intentObserver.disable();
                 return;
             }
             if (index >= cards.length && direction == 1){
-                intentObserver.disable();
                 return;
             }
             isAnimating = true;
@@ -77,12 +74,12 @@ export default function Features() {
                 tl.to(cards[currentIndex], {
                     xPercent: -90 * direction,
                     autoAlpha: 0,
-                    duration: 1.5,
+                    duration: 0.4,
                     ease: "power2.inOut",
                 })
                 tl.to(imageWrapper[currentIndex], {
                     autoAlpha: 0,
-                    duration: 1.5,
+                    duration: 0.4,
                     ease: "power2.inOut",
                 },0)
                 tl.fromTo(cards[index], {
@@ -91,50 +88,30 @@ export default function Features() {
                 }, {
                     xPercent: 0,
                     autoAlpha: 1,
-                    duration: 1.8,
+                    duration: 0.5,
                     ease: "power2.inOut",
                 }, 0)
                 tl.fromTo(imageWrapper[index], {
                     autoAlpha: 0,
                 }, {
                     autoAlpha: 1,
-                    duration: 2,
+                    duration: 0.5,
                     ease: "power2.inOut",
                 }, 0)
         })
-        const intentObserver = Observer.create({
-            target: window,
-            type: "wheel,touch,pointer",
-            onUp: () => {console.log("up"); gotoSection(currentIndex + 1, 1)},
-            onDown: () => {console.log("down"); gotoSection(currentIndex - 1, -1)},
-            tolerance: 10,
-            wheelSpeed: -1,
-            preventDefault: true,
-            lockAxis: true,
-        })
-        intentObserver.disable();
-        ScrollTrigger.create({
-            trigger: divRef.current,
-            start: "top top",
-            end: "+=100%",
-            pin: true,
-            // pinSpacing: false,
-            scrub: 1,
-            onEnter: () => intentObserver.enable(),
-            onLeaveBack: () => intentObserver.disable(),
-            onEnterBack: () => intentObserver.enable(),
-            onLeave: () => intentObserver.disable(),
-            // onUpdate: (self) => {
-            //     console.log(self.progress)
-            // }
-        })
-        
-    }, {scope: divRef})
+    })()
+    nextBtn.current?.addEventListener("click", () => gotoSection(1));
+    prevBtn.current?.addEventListener("click", () => gotoSection(-1));
+        },
+        {scope: divRef})
+    
     return (
-        <div ref={divRef} className="h-screen w-full bg-(--bg-light)">
+        <div ref={divRef} className="relative h-screen w-full bg-(--bg-light)">
             {
                 featuresData.map((data) => <Feature key={data.title} {...data} />)
             }
+            <div ref={nextBtn}  className="absolute top-1/2 translate-y-[-50%] right-2 md:right-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowRight className="w-10 h-10"/></div>
+            <div ref={prevBtn}  className="absolute top-1/2 translate-y-[-50%] left-2 md:left-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowLeft className="w-10 h-10"/></div>            
         </div>
     );
 }
