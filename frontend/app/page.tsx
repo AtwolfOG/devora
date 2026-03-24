@@ -3,6 +3,8 @@ import Image from "next/image";
 import Problems from "@/components/problems";
 import Features from "@/components/features";
 import Steps from "@/components/steps";
+import CTA from "@/components/cta";
+import Footer from "@/components/footer";
 export default function Home() {
   return (
     <div>
@@ -10,6 +12,8 @@ export default function Home() {
       <Problems />
       <Features />
       <Steps />
+      <CTA />
+      <Footer />
     </div>
   );
 }

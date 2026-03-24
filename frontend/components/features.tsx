@@ -111,8 +111,8 @@ export default function Features() {
                 {
                     featuresData.map((data) => <Feature key={data.title} {...data} />)
                 }
-                <div ref={nextBtn}  className="absolute top-1/2 translate-y-[-50%] right-2 md:right-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowRight className="w-10 h-10"/></div>
-                <div ref={prevBtn}  className="absolute top-1/2 translate-y-[-50%] left-2 md:left-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowLeft className="w-10 h-10"/></div>
+                <div ref={nextBtn}  className="absolute top-1/2 translate-y-[-50%] right-2 md:right-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light) hover:bg-(--bg-cta) hover:text-(--text-cta) duration-500 cursor-pointer"><ArrowRight className="w-10 h-10"/></div>
+                <div ref={prevBtn}  className="absolute top-1/2 translate-y-[-50%] left-2 md:left-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light) hover:bg-(--bg-cta) hover:text-(--text-cta) duration-500 cursor-pointer"><ArrowLeft className="w-10 h-10"/></div>
             </div>
         </div>
     );

@@ -8,7 +8,7 @@ export default function Hero() {
                 <p className="w-[90vw] max-w-[45ch] my-4 text-(--text-secondary) text-center md:text-left">Devora lets companies run live coding interviews with built-in video calls, collaborative coding environments, and structured challenges</p>
                 <button className="bg-(--bg-cta) text-(--text-cta) px-8 py-2 my-4 text-lg  rounded-md m-auto">Try Now</button>
             </div>
-            <div className="relative hidden lg:block max-w-[600px] w-full h-[90dvh] ">
+            <div className="relative hidden lg:block max-w-[600px] w-[50vw] aspect-square">
             <Image src="/hero.png" alt="Hero" className="w-full h-full cover object-cover" fill />
             </div>
         </div>
