@@ -106,12 +106,14 @@ export default function Features() {
         {scope: divRef})
     
     return (
-        <div ref={divRef} className="relative h-screen w-full bg-(--bg-light)">
-            {
-                featuresData.map((data) => <Feature key={data.title} {...data} />)
-            }
-            <div ref={nextBtn}  className="absolute top-1/2 translate-y-[-50%] right-2 md:right-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowRight className="w-10 h-10"/></div>
-            <div ref={prevBtn}  className="absolute top-1/2 translate-y-[-50%] left-2 md:left-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowLeft className="w-10 h-10"/></div>            
+        <div className="w-full h-[800px] md:h-screen max-h-[1000px] bg-(--bg-light)">
+            <div ref={divRef} className="max-w-[1440px] m-auto relative h-full ">
+                {
+                    featuresData.map((data) => <Feature key={data.title} {...data} />)
+                }
+                <div ref={nextBtn}  className="absolute top-1/2 translate-y-[-50%] right-2 md:right-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowRight className="w-10 h-10"/></div>
+                <div ref={prevBtn}  className="absolute top-1/2 translate-y-[-50%] left-2 md:left-4 z-10 border border-(--border-light) rounded-full p-1 shadow-2xl/100 bg-(--bg-light)"><ArrowLeft className="w-10 h-10"/></div>
+            </div>
         </div>
     );
 }
@@ -139,7 +141,7 @@ interface featureType{
 
 function Feature({src, alt, title, subtitle, list, badge}: featureType){
     return(
-        <div className="sections absolute overflow-hidden invisible h-full w-full max-w-[1440px] grid grid-cols-1 md:grid-cols-2 justify-center items-center">
+        <div className="sections absolute overflow-hidden invisible h-full w-full m-auto max-w-[1440px] grid grid-cols-1 md:grid-cols-2 justify-center items-center">
              <div className="image-wrapper w-[90%] justify-self-center md:justify-self-end aspect-video items-center relative ">
                 <Image src={src} alt={alt} fill />
              </div>
