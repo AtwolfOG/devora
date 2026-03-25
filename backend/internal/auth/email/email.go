@@ -24,7 +24,7 @@ type EmailData struct {
 	AppName          string
 	RecipientName    string
 	VerificationLink string
-	ExpiryMinutes      int
+	ExpiryMinutes    int
 	Year             int
 }
 
@@ -100,7 +100,7 @@ const emailTemplate = `<!DOCTYPE html>
 // Example usage — remove or adapt for your actual application
 // ---------------------------------------------------------------------------
 
-func CreateTemplate(emailData EmailData) (string, error){
+func CreateTemplate(emailData EmailData) (string, error) {
 	tmpl, err := template.New("email").Parse(emailTemplate)
 	if err != nil {
 		return "", err
@@ -115,13 +115,13 @@ func CreateTemplate(emailData EmailData) (string, error){
 
 func SendEmail(cfg *config.Config, to, body string) error {
 	auth := smtp.PlainAuth("", cfg.SmtpUser, cfg.SmtpPassword, "smtp.gmail.com")
-	
-	msg := []byte("To: " + to + "\r\n" + 
-		"From: " + cfg.SmtpUser + "\r\n" + 
-		"Subject: " + "Devora - Verify your email" + "\r\n" + 
-		"MIME-Version: 1.0\r\n" + 
-		"Content-Type: text/html; charset=\"UTF-8\"\r\n" + 
-		"\r\n" + 
+
+	msg := []byte("To: " + to + "\r\n" +
+		"From: " + cfg.SmtpUser + "\r\n" +
+		"Subject: " + "Devora - Verify your email" + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\"\r\n" +
+		"\r\n" +
 		body)
 
 	addr := fmt.Sprintf("%s:%s", "smtp.gmail.com", "587")

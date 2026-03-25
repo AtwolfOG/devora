@@ -13,9 +13,9 @@ import (
 )
 
 type CreateRoomRequest struct {
-	Name string `json:"name"`
-	Description string `json:"description"`
-	StartTime time.Time `json:"start_time"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	StartTime   time.Time `json:"start_time"`
 }
 
 func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -39,11 +39,11 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 	// create room
 	err = cfg.DB.CreateRoom(r.Context(), database.CreateRoomParams{
-		ID: uuid.New(),
-		Name: req.Name,
+		ID:          uuid.New(),
+		Name:        req.Name,
 		Description: req.Description,
-		OwnerID: userId,
-		StartTime: req.StartTime,
+		OwnerID:     userId,
+		StartTime:   req.StartTime,
 	})
 	if err != nil {
 		http.Error(w, "Failed to create room", http.StatusInternalServerError)

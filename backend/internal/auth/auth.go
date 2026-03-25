@@ -8,9 +8,11 @@ import (
 
 	"github.com/google/uuid"
 )
+
 type contextKey string
 
 const userIDKey contextKey = "user_id"
+
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.Header.Get("Authorization")
@@ -18,7 +20,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		
+
 		// remove "Bearer " from tokenString
 		tokenString = tokenString[7:]
 		claims, err := VerifyJWT(tokenString, []byte(os.Getenv("JWT_SECRET")))

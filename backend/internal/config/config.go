@@ -9,17 +9,17 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	JWTSecret []byte
-	DB *database.Queries
-	GithubClientId string
+	DatabaseURL        string
+	JWTSecret          []byte
+	DB                 *database.Queries
+	GithubClientId     string
 	GithubClientSecret string
-	SmtpUser string
-	SmtpPassword string
-	BaseURL string
-	Domain string
-	AppName string
-	Environment string
+	SmtpUser           string
+	SmtpPassword       string
+	BaseURL            string
+	Domain             string
+	AppName            string
+	Environment        string
 }
 
 func LoadConfig() *Config {
@@ -28,15 +28,15 @@ func LoadConfig() *Config {
 		log.Fatal("Error loading .env file")
 	}
 	return &Config{
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		JWTSecret: []byte(os.Getenv("JWT_SECRET")),
-		GithubClientId: os.Getenv("GITHUB_CLIENT_ID"),
+		DatabaseURL:        os.Getenv("DATABASE_URL"),
+		JWTSecret:          []byte(os.Getenv("JWT_SECRET")),
+		GithubClientId:     os.Getenv("GITHUB_CLIENT_ID"),
 		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
-		SmtpUser: os.Getenv("SMTP_USER"),
-		SmtpPassword: os.Getenv("SMTP_PASSWORD"),
-		BaseURL: os.Getenv("BASE_URL"),
-		Domain: os.Getenv("DOMAIN"),
-		AppName: os.Getenv("APP_NAME"),
-		Environment: os.Getenv("ENVIRONMENT"),
+		SmtpUser:           os.Getenv("SMTP_USER"),
+		SmtpPassword:       os.Getenv("SMTP_PASSWORD"),
+		BaseURL:            os.Getenv("BASE_URL"),
+		Domain:             os.Getenv("DOMAIN"),
+		AppName:            os.Getenv("APP_NAME"),
+		Environment:        os.Getenv("ENVIRONMENT"),
 	}
 }

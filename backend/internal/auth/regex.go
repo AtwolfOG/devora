@@ -8,14 +8,13 @@ func IsValidEmail(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-
 var (
 	hasMinLen  = regexp.MustCompile(`.{8,}`)
 	hasUpper   = regexp.MustCompile(`[A-Z]`)
 	hasLower   = regexp.MustCompile(`[a-z]`)
 	hasNumber  = regexp.MustCompile(`[0-9]`)
 	hasSpecial = regexp.MustCompile(`[!@#\$%\^&\*]`)
-	)
+)
 
 func IsValidPassword(password string) bool {
 	return hasMinLen.MatchString(password) &&

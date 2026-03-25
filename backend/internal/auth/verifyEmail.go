@@ -9,7 +9,6 @@ import (
 	"github.com/AtwolfOG/devora/internal/database"
 )
 
-
 func VerifyEmail(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	code := r.PathValue("code")
 	if code == "" {
@@ -31,7 +30,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 	err = cfg.DB.SetPendingStatus(r.Context(), database.SetPendingStatusParams{
-		ID: verificationLink.UserID,
+		ID:      verificationLink.UserID,
 		Pending: sql.NullBool{Bool: true, Valid: true},
 	})
 	if err != nil {

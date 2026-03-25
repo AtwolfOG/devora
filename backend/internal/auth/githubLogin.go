@@ -15,15 +15,16 @@ import (
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
-func getAccessToken(code string, cfg *config.Config) ( *TokenResponse, error){
+
+func getAccessToken(code string, cfg *config.Config) (*TokenResponse, error) {
 	params := url.Values{
-		"code": []string{code},
-		"client_id": []string{cfg.GithubClientId},
+		"code":          []string{code},
+		"client_id":     []string{cfg.GithubClientId},
 		"client_secret": []string{cfg.GithubClientSecret},
 	}
 	req, err := http.NewRequest("POST", "https://github.com/login/oauth/access_token", strings.NewReader(params.Encode()))
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
@@ -42,20 +43,22 @@ func getAccessToken(code string, cfg *config.Config) ( *TokenResponse, error){
 	}
 	return &tokenResponse, nil
 }
+
 // user response from github api
 type UserResponse struct {
-	ID int32 `json:"id"`
-	Login string `json:"login"`
-	Name string `json:"name"`
-	Email string `json:"email"`
+	ID        int32  `json:"id"`
+	Login     string `json:"login"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
 	AvatarUrl string `json:"avatar_url"`
 }
-func getUser(token string) (*UserResponse, error){
+
+func getUser(token string) (*UserResponse, error) {
 	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
-	req.Header.Set("Authorization", "token " + token)
+	req.Header.Set("Authorization", "token "+token)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -85,7 +88,7 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	}
 	userResponse, err := getUser(tokenResponse.AccessToken)
 	if err != nil {
-		http.Error(w, "Failed to get user: " + err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to get user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -101,17 +104,17 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 
 	userId := uuid.New()
 	err = cfg.DB.CreateUserWithGithub(r.Context(), database.CreateUserWithGithubParams{
-		ID: userId,
-		Name: userResponse.Name,
+		ID:                userId,
+		Name:              userResponse.Name,
 		ProfilePictureUrl: userResponse.AvatarUrl,
-		Email: userResponse.Email,
+		Email:             userResponse.Email,
 	})
 	if err != nil {
-		http.Error(w, "Failed to create user: " + err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	err = cfg.DB.CreateGithubOauth(r.Context(), database.CreateGithubOauthParams{
-		UserID: userId,
+		UserID:   userId,
 		GithubID: userResponse.ID,
 	})
 	if err != nil {

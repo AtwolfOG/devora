@@ -30,7 +30,7 @@ func configWrapper(config *config.Config, handler func(w http.ResponseWriter, r 
 }
 
 func main() {
-	config := config.LoadConfig()	
+	config := config.LoadConfig()
 	r := chi.NewRouter()
 	db, err := sql.Open("postgres", config.DatabaseURL)
 	if err != nil {

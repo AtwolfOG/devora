@@ -18,8 +18,8 @@ func GenerateJWT(id string, secret []byte, duration time.Duration) (string, erro
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer: "devora",
-			Audience: []string{"devora"},
+			Issuer:    "devora",
+			Audience:  []string{"devora"},
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

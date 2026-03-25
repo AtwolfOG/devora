@@ -43,7 +43,7 @@ func TestExpiredJWT(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	// fmt.Println(token) 
+	// fmt.Println(token)
 	time.Sleep(2 * time.Second)
 	claims, err := VerifyJWT(token, []byte("secret"))
 	if err != nil {

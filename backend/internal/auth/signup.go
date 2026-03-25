@@ -16,12 +16,10 @@ import (
 )
 
 type SignupRequest struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
-	Name string `json:"name"`
+	Name     string `json:"name"`
 }
-
-
 
 func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req SignupRequest
@@ -45,13 +43,13 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		http.Error(w, "try a stronger password", http.StatusBadRequest)
 		return
 	}
-	
+
 	HashedPassword, err := HashPassword(req.Password)
 	if err != nil {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
-	
+
 	existingUsers, err := cfg.DB.GetUsersByEmail(r.Context(), req.Email)
 	if err != nil {
 		http.Error(w, "Failed to check if user exists", http.StatusInternalServerError)
@@ -62,13 +60,13 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		return
 	}
 	// TODO: allow user to recreate account with new password if the account is not verified yet
-	
+
 	userId := uuid.New()
 	err = cfg.DB.CreateUserWithEmailPassword(r.Context(), database.CreateUserWithEmailPasswordParams{
-		ID: userId,
-		Email: req.Email,
+		ID:       userId,
+		Email:    req.Email,
 		Password: sql.NullString{String: HashedPassword, Valid: true},
-		Name: req.Name,
+		Name:     req.Name,
 	})
 	if err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
@@ -77,8 +75,8 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 
 	verificationCode := GenerateVerificationCode()
 	err = cfg.DB.CreateVerificationLink(r.Context(), database.CreateVerificationLinkParams{
-		UserID: userId,
-		Code: verificationCode,
+		UserID:    userId,
+		Code:      verificationCode,
 		ExpiresAt: time.Now().Add(15 * time.Minute),
 	})
 	if err != nil {
@@ -87,13 +85,13 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 	}
 	// send verification email
 	verificationLink := fmt.Sprintf("%s/auth/verify/%s", cfg.BaseURL, verificationCode)
-	
+
 	tmpl, err := email.CreateTemplate(email.EmailData{
-		AppName: cfg.AppName,
+		AppName:          cfg.AppName,
 		VerificationLink: verificationLink,
-		RecipientName: req.Email,
-		ExpiryMinutes: 15,
-		Year: time.Now().Year(),
+		RecipientName:    req.Email,
+		ExpiryMinutes:    15,
+		Year:             time.Now().Year(),
 	})
 	if err != nil {
 		http.Error(w, "Failed to create verification email", http.StatusInternalServerError)

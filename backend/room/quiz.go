@@ -13,7 +13,7 @@ import (
 )
 
 type CreateQuestionsRequest struct {
-	RoomID string `json:"room_id"`
+	RoomID    string   `json:"room_id"`
 	Questions []string `json:"questions"`
 }
 
@@ -24,7 +24,7 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	// get user id from request context
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
@@ -54,7 +54,7 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	}
 	for _, question := range req.Questions {
 		err = cfg.DB.CreateQuestion(r.Context(), database.CreateQuestionParams{
-			RoomID: roomUUID,
+			RoomID:   roomUUID,
 			Question: question,
 		})
 		if err != nil {
@@ -119,7 +119,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	}
 
 	err = cfg.DB.DeleteQuestion(r.Context(), database.DeleteQuestionParams{
-		ID: int32(questionIdInt),
+		ID:     int32(questionIdInt),
 		RoomID: roomUUID,
 	})
 	if err != nil {
