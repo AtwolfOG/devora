@@ -34,7 +34,7 @@ func getAccessToken(code string, cfg *config.Config) ( *TokenResponse, error){
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("Failed to get access token")
+		return nil, errors.New("failed to get access token")
 	}
 	var tokenResponse TokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
@@ -63,7 +63,7 @@ func getUser(token string) (*UserResponse, error){
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("Failed to get user")
+		return nil, errors.New("failed to get user")
 	}
 	var userResponse UserResponse
 	if err := json.NewDecoder(resp.Body).Decode(&userResponse); err != nil {

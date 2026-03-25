@@ -2,10 +2,15 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
-)
 
+	"github.com/google/uuid"
+)
+type contextKey string
+
+const userIDKey contextKey = "user_id"
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.Header.Get("Authorization")
@@ -21,7 +26,15 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		ctx := context.WithValue(r.Context(), "user_id", claims.Id)
+		ctx := context.WithValue(r.Context(), userIDKey, claims.Id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func GetIdFromReqCtx(r *http.Request) (uuid.UUID, error) {
+	id, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	if !ok {
+		return uuid.Nil, errors.New("user id not found in request context")
+	}
+	return id, nil
 }

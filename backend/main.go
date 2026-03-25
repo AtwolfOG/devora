@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
@@ -16,11 +17,11 @@ import (
 
 const port = "8080"
 
-func dbWrapper(db *database.Queries, handler func(w http.ResponseWriter, r *http.Request, db *database.Queries)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handler(w, r, db)
-	}
-}
+// func dbWrapper(db *database.Queries, handler func(w http.ResponseWriter, r *http.Request, db *database.Queries)) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		handler(w, r, db)
+// 	}
+// }
 
 func configWrapper(config *config.Config, handler func(w http.ResponseWriter, r *http.Request, config *config.Config)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +50,9 @@ func main() {
 	})
 	// this is for testing purposes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("<a href='https://github.com/login/oauth/authorize?client_id=" + config.GithubClientId + "'>Login with Github</a>"))
+		if _, err := w.Write([]byte("<a href='https://github.com/login/oauth/authorize?client_id=" + config.GithubClientId + "'>Login with Github</a>")); err != nil {
+			log.Printf("write error: %v", err)
+		}
 	})
 	authRouter.Post("/signup", configWrapper(config, auth.SignupWithEmailAndPassword))
 	authRouter.Post("/login", configWrapper(config, auth.LoginWithEmailAndPassword))
@@ -71,8 +74,15 @@ func main() {
 	apiRouter.Mount("/room", roomRouter)
 	r.Mount("/api", apiRouter)
 	log.Println("Server started on port " + port)
-	err = http.ListenAndServe(":"+port, r)
-	if err != nil{
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+	err = srv.ListenAndServe()
+	if err != nil {
 		log.Fatal(err)
 	}
 }

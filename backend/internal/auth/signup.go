@@ -11,6 +11,7 @@ import (
 	"github.com/AtwolfOG/devora/internal/auth/email"
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
+	"github.com/AtwolfOG/devora/lib"
 	"github.com/google/uuid"
 )
 
@@ -103,8 +104,5 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		http.Error(w, "Failed to send verification email", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Verification email sent",
-	})
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Verification email sent"})
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
 	"github.com/AtwolfOG/devora/lib"
@@ -31,7 +32,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 
 	// get user id from request context
-	userId, err := lib.GetIdFromReqCtx(r)
+	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
 		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
 		return
@@ -49,10 +50,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Room created successfully",
-	})
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room created successfully"})
 }
 
 func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -71,12 +69,11 @@ func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		http.Error(w, "Failed to get room", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(room)
+	lib.WriteJSON(w, http.StatusOK, room)
 }
 
 func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
-	userId, err := lib.GetIdFromReqCtx(r)
+	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
 		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
 		return
@@ -86,8 +83,7 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		http.Error(w, "Failed to get rooms", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(rooms)
+	lib.WriteJSON(w, http.StatusOK, rooms)
 }
 
 func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -102,7 +98,7 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 	// get user id from request context
-	userId, err := lib.GetIdFromReqCtx(r)
+	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
 		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
 		return
@@ -122,8 +118,5 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		http.Error(w, "Failed to delete room", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Room deleted successfully",
-	})
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room deleted successfully"})
 }

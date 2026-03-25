@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
 	"github.com/AtwolfOG/devora/lib"
@@ -25,7 +26,7 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	}
 	
 	// get user id from request context
-	userId, err := lib.GetIdFromReqCtx(r)
+	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
 		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
 		return
@@ -61,10 +62,7 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 			return
 		}
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Questions created successfully",
-	})
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Questions created successfully"})
 }
 
 func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -83,8 +81,7 @@ func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config
 		http.Error(w, "Failed to get questions", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(questions)
+	lib.WriteJSON(w, http.StatusOK, questions)
 }
 
 func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -94,7 +91,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		http.Error(w, "Missing question id or room id", http.StatusBadRequest)
 		return
 	}
-	questionIdInt, err := strconv.Atoi(questionId)
+	questionIdInt, err := strconv.ParseInt(questionId, 10, 32)
 	if err != nil {
 		http.Error(w, "Failed to parse question id", http.StatusBadRequest)
 		return
@@ -105,7 +102,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		return
 	}
 	// get user id from request context
-	userId, err := lib.GetIdFromReqCtx(r)
+	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
 		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
 		return
@@ -120,7 +117,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		http.Error(w, "You are not the owner of this room", http.StatusUnauthorized)
 		return
 	}
-	
+
 	err = cfg.DB.DeleteQuestion(r.Context(), database.DeleteQuestionParams{
 		ID: int32(questionIdInt),
 		RoomID: roomUUID,

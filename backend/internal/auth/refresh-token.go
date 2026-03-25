@@ -3,12 +3,13 @@ package auth
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
+	"github.com/AtwolfOG/devora/lib"
 	"github.com/google/uuid"
 )
 
@@ -65,11 +66,7 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 		Expires: time.Now().Add(7 * 24 * time.Hour),
 	}
 	http.SetCookie(w, &cookie)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(SignupResponse{
-		AccessToken: token,
-	})
+	lib.WriteJSON(w, http.StatusOK, SignupResponse{AccessToken: token})
 }
 
 
@@ -83,7 +80,9 @@ func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	if err != nil {
 		cookie.MaxAge = -1
 		http.SetCookie(w, cookie)
-		cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value)
+		if err := cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value); err != nil {
+			log.Printf("failed to delete refresh token: %v", err)
+		}
 		http.Error(w, "Failed to get refresh token", http.StatusUnauthorized)
 		return
 	}
@@ -92,7 +91,9 @@ func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	if err != nil {
 		cookie.MaxAge = -1
 		http.SetCookie(w, cookie)
-		cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value)
+		if err := cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value); err != nil {
+			log.Printf("failed to delete refresh token: %v", err)
+		}
 		http.Error(w, "Failed to get user", http.StatusUnauthorized)
 		return
 	}
@@ -102,10 +103,6 @@ func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"access_token": token,
-	})
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"access_token": token})
 	
 }
