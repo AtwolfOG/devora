@@ -14,7 +14,7 @@ import (
 
 const createUserWithEmailPassword = `-- name: CreateUserWithEmailPassword :exec
 INSERT INTO users (id, email, password, name, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW())
-` //#nosec G101 -- sqlc generated SQL, not a hardcoded credential
+`
 
 type CreateUserWithEmailPasswordParams struct {
 	ID       uuid.UUID

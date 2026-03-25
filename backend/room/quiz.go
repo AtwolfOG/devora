@@ -12,9 +12,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type question struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	IsCode      bool   `json:"is_code"`
+}
 type CreateQuestionsRequest struct {
-	RoomID    string   `json:"room_id"`
-	Questions []string `json:"questions"`
+	RoomID    string     `json:"room_id"`
+	Questions []question `json:"questions"`
 }
 
 func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -54,8 +59,10 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	}
 	for _, question := range req.Questions {
 		err = cfg.DB.CreateQuestion(r.Context(), database.CreateQuestionParams{
-			RoomID:   roomUUID,
-			Question: question,
+			RoomID:      roomUUID,
+			Title:       question.Title,
+			Description: question.Description,
+			IsCode:      question.IsCode,
 		})
 		if err != nil {
 			http.Error(w, "Failed to create question", http.StatusInternalServerError)
@@ -84,6 +91,38 @@ func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config
 	lib.WriteJSON(w, http.StatusOK, questions)
 }
 
+func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	questionId := r.PathValue("question_id")
+	roomId := r.PathValue("room_id")
+	if questionId == "" || roomId == "" {
+		http.Error(w, "Missing question id or room id", http.StatusBadRequest)
+		return
+	}
+	questionIdInt, err := strconv.ParseInt(questionId, 10, 32)
+	if err != nil {
+		http.Error(w, "Failed to parse question id", http.StatusBadRequest)
+		return
+	}
+	if questionIdInt <= 0 {
+		http.Error(w, "Invalid question id", http.StatusBadRequest)
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		return
+	}
+	question, err := cfg.DB.GetQuestionByID(r.Context(), database.GetQuestionByIDParams{
+		ID:     int32(questionIdInt),
+		RoomID: roomUUID,
+	})
+	if err != nil {
+		http.Error(w, "Failed to get question", http.StatusInternalServerError)
+		return
+	}
+	lib.WriteJSON(w, http.StatusOK, question)
+}
+
 func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")
@@ -94,6 +133,10 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	questionIdInt, err := strconv.ParseInt(questionId, 10, 32)
 	if err != nil {
 		http.Error(w, "Failed to parse question id", http.StatusBadRequest)
+		return
+	}
+	if questionIdInt <= 0 {
+		http.Error(w, "Invalid question id", http.StatusBadRequest)
 		return
 	}
 	roomUUID, err := uuid.Parse(roomId)

@@ -12,21 +12,28 @@ import (
 )
 
 const createQuestion = `-- name: CreateQuestion :exec
-INSERT INTO question (room_id, question) VALUES ($1, $2)
+INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3, $4)
 `
 
 type CreateQuestionParams struct {
-	RoomID   uuid.UUID
-	Question string
+	RoomID      uuid.UUID
+	Title       string
+	Description string
+	IsCode      bool
 }
 
 func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) error {
-	_, err := q.db.ExecContext(ctx, createQuestion, arg.RoomID, arg.Question)
+	_, err := q.db.ExecContext(ctx, createQuestion,
+		arg.RoomID,
+		arg.Title,
+		arg.Description,
+		arg.IsCode,
+	)
 	return err
 }
 
 const deleteQuestion = `-- name: DeleteQuestion :exec
-DELETE FROM question WHERE id = $1 AND room_id = $2
+DELETE FROM questions WHERE id = $1 AND room_id = $2
 `
 
 type DeleteQuestionParams struct {
@@ -40,26 +47,33 @@ func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) 
 }
 
 const getQuestionByID = `-- name: GetQuestionByID :one
-SELECT id, room_id, question, done, passed, created_at, updated_at FROM question WHERE id = $1
+SELECT id, room_id, done, created_at, updated_at, answer, title, description, is_code FROM questions WHERE id = $1 AND room_id = $2
 `
 
-func (q *Queries) GetQuestionByID(ctx context.Context, id int32) (Question, error) {
-	row := q.db.QueryRowContext(ctx, getQuestionByID, id)
+type GetQuestionByIDParams struct {
+	ID     int32
+	RoomID uuid.UUID
+}
+
+func (q *Queries) GetQuestionByID(ctx context.Context, arg GetQuestionByIDParams) (Question, error) {
+	row := q.db.QueryRowContext(ctx, getQuestionByID, arg.ID, arg.RoomID)
 	var i Question
 	err := row.Scan(
 		&i.ID,
 		&i.RoomID,
-		&i.Question,
 		&i.Done,
-		&i.Passed,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Answer,
+		&i.Title,
+		&i.Description,
+		&i.IsCode,
 	)
 	return i, err
 }
 
 const getQuestionsByRoomID = `-- name: GetQuestionsByRoomID :many
-SELECT id, room_id, question, done, passed, created_at, updated_at FROM question WHERE room_id = $1
+SELECT id, room_id, done, created_at, updated_at, answer, title, description, is_code FROM questions WHERE room_id = $1
 `
 
 func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([]Question, error) {
@@ -74,11 +88,13 @@ func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([
 		if err := rows.Scan(
 			&i.ID,
 			&i.RoomID,
-			&i.Question,
 			&i.Done,
-			&i.Passed,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Answer,
+			&i.Title,
+			&i.Description,
+			&i.IsCode,
 		); err != nil {
 			return nil, err
 		}
@@ -94,11 +110,11 @@ func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([
 }
 
 const listQuestions = `-- name: ListQuestions :many
-SELECT id, room_id, question, done, passed, created_at, updated_at FROM question
+SELECT id, room_id, done, created_at, updated_at, answer, title, description, is_code FROM questions WHERE room_id = $1
 `
 
-func (q *Queries) ListQuestions(ctx context.Context) ([]Question, error) {
-	rows, err := q.db.QueryContext(ctx, listQuestions)
+func (q *Queries) ListQuestions(ctx context.Context, roomID uuid.UUID) ([]Question, error) {
+	rows, err := q.db.QueryContext(ctx, listQuestions, roomID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,11 +125,13 @@ func (q *Queries) ListQuestions(ctx context.Context) ([]Question, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.RoomID,
-			&i.Question,
 			&i.Done,
-			&i.Passed,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Answer,
+			&i.Title,
+			&i.Description,
+			&i.IsCode,
 		); err != nil {
 			return nil, err
 		}
@@ -129,15 +147,24 @@ func (q *Queries) ListQuestions(ctx context.Context) ([]Question, error) {
 }
 
 const updateQuestion = `-- name: UpdateQuestion :exec
-UPDATE question SET question = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
+UPDATE questions SET title = $1, description = $2, is_code = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 AND room_id = $5
 `
 
 type UpdateQuestionParams struct {
-	Question string
-	ID       int32
+	Title       string
+	Description string
+	IsCode      bool
+	ID          int32
+	RoomID      uuid.UUID
 }
 
 func (q *Queries) UpdateQuestion(ctx context.Context, arg UpdateQuestionParams) error {
-	_, err := q.db.ExecContext(ctx, updateQuestion, arg.Question, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateQuestion,
+		arg.Title,
+		arg.Description,
+		arg.IsCode,
+		arg.ID,
+		arg.RoomID,
+	)
 	return err
 }

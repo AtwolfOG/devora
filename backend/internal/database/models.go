@@ -56,6 +56,58 @@ func (ns NullAuthType) Value() (driver.Value, error) {
 	return string(ns.AuthType), nil
 }
 
+type Language string
+
+const (
+	LanguagePython     Language = "python"
+	LanguageJavascript Language = "javascript"
+	LanguageGo         Language = "go"
+)
+
+func (e *Language) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Language(s)
+	case string:
+		*e = Language(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Language: %T", src)
+	}
+	return nil
+}
+
+type NullLanguage struct {
+	Language Language
+	Valid    bool // Valid is true if Language is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullLanguage) Scan(value interface{}) error {
+	if value == nil {
+		ns.Language, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Language.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullLanguage) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Language), nil
+}
+
+type CodeSnippet struct {
+	Name       string
+	QuestionID uuid.UUID
+	Code       string
+	Language   Language
+	CreatedAt  sql.NullTime
+	UpdatedAt  sql.NullTime
+}
+
 type GithubOauth struct {
 	GithubID  int32
 	UserID    uuid.UUID
@@ -64,13 +116,15 @@ type GithubOauth struct {
 }
 
 type Question struct {
-	ID        int32
-	RoomID    uuid.UUID
-	Question  string
-	Done      bool
-	Passed    bool
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	ID          int32
+	RoomID      uuid.UUID
+	Done        bool
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
+	Answer      sql.NullString
+	Title       string
+	Description string
+	IsCode      bool
 }
 
 type RefreshToken struct {
@@ -80,14 +134,15 @@ type RefreshToken struct {
 }
 
 type Room struct {
-	ID          uuid.UUID
-	Name        string
-	Description string
-	OwnerID     uuid.UUID
-	StartTime   time.Time
-	IsActive    bool
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
+	ID            uuid.UUID
+	Name          string
+	Description   string
+	OwnerID       uuid.UUID
+	StartTime     time.Time
+	IsActive      bool
+	CreatedAt     sql.NullTime
+	UpdatedAt     sql.NullTime
+	ParticipantID uuid.UUID
 }
 
 type User struct {

@@ -14,7 +14,7 @@ import (
 
 const createRefreshToken = `-- name: CreateRefreshToken :exec
 INSERT INTO refresh_token (token, user_id, expires_at) VALUES ($1, $2, $3)
-` //#nosec G101 -- sqlc generated SQL, not a hardcoded credential
+`
 
 type CreateRefreshTokenParams struct {
 	Token     string
@@ -29,7 +29,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 
 const deleteRefreshToken = `-- name: DeleteRefreshToken :exec
 DELETE FROM refresh_token WHERE token = $1
-` //#nosec G101 -- sqlc generated SQL, not a hardcoded credential
+`
 
 func (q *Queries) DeleteRefreshToken(ctx context.Context, token string) error {
 	_, err := q.db.ExecContext(ctx, deleteRefreshToken, token)
@@ -38,7 +38,7 @@ func (q *Queries) DeleteRefreshToken(ctx context.Context, token string) error {
 
 const deleteRefreshTokenByUserId = `-- name: DeleteRefreshTokenByUserId :exec
 DELETE FROM refresh_token WHERE user_id = $1
-` //#nosec G101 -- sqlc generated SQL, not a hardcoded credential
+`
 
 func (q *Queries) DeleteRefreshTokenByUserId(ctx context.Context, userID uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, deleteRefreshTokenByUserId, userID)
@@ -47,7 +47,7 @@ func (q *Queries) DeleteRefreshTokenByUserId(ctx context.Context, userID uuid.UU
 
 const getRefreshToken = `-- name: GetRefreshToken :one
 SELECT token, user_id, expires_at FROM refresh_token WHERE token = $1
-` //#nosec G101 -- sqlc generated SQL, not a hardcoded credential
+`
 
 func (q *Queries) GetRefreshToken(ctx context.Context, token string) (RefreshToken, error) {
 	row := q.db.QueryRowContext(ctx, getRefreshToken, token)

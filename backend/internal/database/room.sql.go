@@ -45,7 +45,7 @@ func (q *Queries) DeleteRoom(ctx context.Context, id uuid.UUID) error {
 }
 
 const getRoomByID = `-- name: GetRoomByID :one
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at FROM room WHERE id = $1
+SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room WHERE id = $1
 `
 
 func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
@@ -60,12 +60,13 @@ func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ParticipantID,
 	)
 	return i, err
 }
 
 const getRoomByName = `-- name: GetRoomByName :one
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at FROM room WHERE name = $1
+SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room WHERE name = $1
 `
 
 func (q *Queries) GetRoomByName(ctx context.Context, name string) (Room, error) {
@@ -80,12 +81,13 @@ func (q *Queries) GetRoomByName(ctx context.Context, name string) (Room, error) 
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ParticipantID,
 	)
 	return i, err
 }
 
 const getRoomsByOwnerID = `-- name: GetRoomsByOwnerID :many
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at FROM room WHERE owner_id = $1
+SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room WHERE owner_id = $1
 `
 
 func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
@@ -106,6 +108,7 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ParticipantID,
 		); err != nil {
 			return nil, err
 		}
@@ -121,7 +124,7 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 }
 
 const listRooms = `-- name: ListRooms :many
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at FROM room
+SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room
 `
 
 func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
@@ -142,6 +145,7 @@ func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ParticipantID,
 		); err != nil {
 			return nil, err
 		}

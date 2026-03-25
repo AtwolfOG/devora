@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE question (
+CREATE TABLE questions (
     id SERIAL,
     room_id UUID NOT NULL,
     question TEXT NOT NULL,
@@ -8,8 +8,8 @@ CREATE TABLE question (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE,
-    CONSTRAINT question_pkey PRIMARY KEY (id, room_id )
+    CONSTRAINT questions_pkey PRIMARY KEY (id, room_id )
 );
 
 -- +goose Down
-DROP TABLE question;
+DROP TABLE questions;

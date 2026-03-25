@@ -1,17 +1,17 @@
 -- name: CreateQuestion :exec
-INSERT INTO question (room_id, question) VALUES ($1, $2);
+INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3, $4);
 
 -- name: GetQuestionByID :one
-SELECT * FROM question WHERE id = $1;
+SELECT * FROM questions WHERE id = $1 AND room_id = $2;
 
 -- name: GetQuestionsByRoomID :many
-SELECT * FROM question WHERE room_id = $1;
+SELECT * FROM questions WHERE room_id = $1;
 
 -- name: UpdateQuestion :exec
-UPDATE question SET question = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2;
+UPDATE questions SET title = $1, description = $2, is_code = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 AND room_id = $5;
 
 -- name: DeleteQuestion :exec
-DELETE FROM question WHERE id = $1 AND room_id = $2;
+DELETE FROM questions WHERE id = $1 AND room_id = $2;
 
 -- name: ListQuestions :many
-SELECT * FROM question;
+SELECT * FROM questions WHERE room_id = $1;

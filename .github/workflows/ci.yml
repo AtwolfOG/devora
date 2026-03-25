@@ -61,7 +61,7 @@ jobs:
             - name: Security scan
               run: |
                 cd backend
-                gosec ./...
+                gosec -exclude=G101 -exclude-dir=database ./...
                 cd ..
     build:
         runs-on: ubuntu-latest
