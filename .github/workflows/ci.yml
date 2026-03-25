@@ -1,0 +1,92 @@
+name: ci
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Use golang
+              uses: actions/setup-go@v4
+              with:
+                go-version: "1.24"
+            - name: Install dependencies
+              run: |
+                cd backend
+                go mod download
+                cd ..
+            - name: Format
+              run: |
+                cd backend
+                test -z $(go fmt ./...)
+                cd ..
+            - name: Install staticcheck
+              run: |
+                cd backend
+                go install honnef.co/go/tools/cmd/staticcheck@latest
+                cd ..
+            - name: Lint
+              run: |
+                cd backend
+                staticcheck ./...
+                cd ..
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Use golang
+              uses: actions/setup-go@v4
+              with:
+                go-version: "1.24"
+            - name: Install dependencies
+              run: |
+                cd backend
+                go mod tidy
+                cd ..
+            - name: Test
+              run: |
+                cd backend
+                go test ./...
+                cd ..
+            - name: Install gosec
+              run: |
+                cd backend
+                go install github.com/securego/gosec/v2/cmd/gosec@latest
+                cd ..
+            - name: Security scan
+              run: |
+                cd backend
+                gosec ./...
+                cd ..
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: "22.17.0"
+            - name: Install dependencies
+              run: |
+                cd frontend
+                npm ci
+                cd ..
+            - name: Build
+              run: |
+                cd frontend
+                npm run build
+                cd ..
+            - name: Use golang
+              uses: actions/setup-go@v4
+              with:
+                go-version: "1.24"
+            - name: Install dependencies
+              run: |
+                cd backend
+                go mod tidy
+                cd ..
