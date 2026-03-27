@@ -55,11 +55,16 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		http.Error(w, "Failed to check if user exists", http.StatusInternalServerError)
 		return
 	}
-	if len(existingUsers) > 0 {
+	if len(existingUsers) > 0 && existingUsers[0].Pending.Bool {
+		err = cfg.DB.DeleteUser(r.Context(), existingUsers[0].ID)
+		if err != nil {
+			http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+			return
+		}
+	} else if len(existingUsers) > 0 && !existingUsers[0].Pending.Bool {
 		http.Error(w, "User already exists", http.StatusConflict)
 		return
 	}
-	// TODO: allow user to recreate account with new password if the account is not verified yet
 
 	userId := uuid.New()
 	err = cfg.DB.CreateUserWithEmailPassword(r.Context(), database.CreateUserWithEmailPasswordParams{
@@ -97,10 +102,12 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		http.Error(w, "Failed to create verification email", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("template created")
 	err = email.SendEmail(cfg, req.Email, tmpl)
 	if err != nil {
 		http.Error(w, "Failed to send verification email", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("email sent")
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Verification email sent"})
 }

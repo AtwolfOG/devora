@@ -7,19 +7,17 @@ package database
 
 import (
 	"context"
-
-	"github.com/google/uuid"
 )
 
 const createCode = `-- name: CreateCode :one
 INSERT INTO code_snippets (name, question_id, code, language)
 VALUES ($1, $2, $3, $4)
-RETURNING name, question_id, code, language, created_at, updated_at
+RETURNING name, question_id, room_id, code, language, created_at, updated_at
 `
 
 type CreateCodeParams struct {
 	Name       string
-	QuestionID uuid.UUID
+	QuestionID int32
 	Code       string
 	Language   Language
 }
@@ -35,6 +33,7 @@ func (q *Queries) CreateCode(ctx context.Context, arg CreateCodeParams) (CodeSni
 	err := row.Scan(
 		&i.Name,
 		&i.QuestionID,
+		&i.RoomID,
 		&i.Code,
 		&i.Language,
 		&i.CreatedAt,
@@ -49,7 +48,7 @@ DELETE FROM code_snippets WHERE name = $1 AND question_id = $2
 
 type DeleteCodeParams struct {
 	Name       string
-	QuestionID uuid.UUID
+	QuestionID int32
 }
 
 func (q *Queries) DeleteCode(ctx context.Context, arg DeleteCodeParams) error {
@@ -58,12 +57,12 @@ func (q *Queries) DeleteCode(ctx context.Context, arg DeleteCodeParams) error {
 }
 
 const getCode = `-- name: GetCode :one
-SELECT name, question_id, code, language, created_at, updated_at FROM code_snippets WHERE name = $1 AND question_id = $2
+SELECT name, question_id, room_id, code, language, created_at, updated_at FROM code_snippets WHERE name = $1 AND question_id = $2
 `
 
 type GetCodeParams struct {
 	Name       string
-	QuestionID uuid.UUID
+	QuestionID int32
 }
 
 func (q *Queries) GetCode(ctx context.Context, arg GetCodeParams) (CodeSnippet, error) {
@@ -72,6 +71,7 @@ func (q *Queries) GetCode(ctx context.Context, arg GetCodeParams) (CodeSnippet, 
 	err := row.Scan(
 		&i.Name,
 		&i.QuestionID,
+		&i.RoomID,
 		&i.Code,
 		&i.Language,
 		&i.CreatedAt,
@@ -81,10 +81,10 @@ func (q *Queries) GetCode(ctx context.Context, arg GetCodeParams) (CodeSnippet, 
 }
 
 const listCodes = `-- name: ListCodes :many
-SELECT name, question_id, code, language, created_at, updated_at FROM code_snippets WHERE question_id = $1
+SELECT name, question_id, room_id, code, language, created_at, updated_at FROM code_snippets WHERE question_id = $1
 `
 
-func (q *Queries) ListCodes(ctx context.Context, questionID uuid.UUID) ([]CodeSnippet, error) {
+func (q *Queries) ListCodes(ctx context.Context, questionID int32) ([]CodeSnippet, error) {
 	rows, err := q.db.QueryContext(ctx, listCodes, questionID)
 	if err != nil {
 		return nil, err
@@ -96,6 +96,7 @@ func (q *Queries) ListCodes(ctx context.Context, questionID uuid.UUID) ([]CodeSn
 		if err := rows.Scan(
 			&i.Name,
 			&i.QuestionID,
+			&i.RoomID,
 			&i.Code,
 			&i.Language,
 			&i.CreatedAt,
@@ -118,12 +119,12 @@ const updateCode = `-- name: UpdateCode :one
 UPDATE code_snippets
 SET code = $3, updated_at = CURRENT_TIMESTAMP
 WHERE name = $1 AND question_id = $2
-RETURNING name, question_id, code, language, created_at, updated_at
+RETURNING name, question_id, room_id, code, language, created_at, updated_at
 `
 
 type UpdateCodeParams struct {
 	Name       string
-	QuestionID uuid.UUID
+	QuestionID int32
 	Code       string
 }
 
@@ -133,6 +134,7 @@ func (q *Queries) UpdateCode(ctx context.Context, arg UpdateCodeParams) (CodeSni
 	err := row.Scan(
 		&i.Name,
 		&i.QuestionID,
+		&i.RoomID,
 		&i.Code,
 		&i.Language,
 		&i.CreatedAt,

@@ -18,3 +18,6 @@ SELECT pending FROM users WHERE id = $1;
 
 -- name: CreateUserWithGithub :exec
 INSERT INTO users (id, name, email, profile_picture_url, auth, created_at, updated_at) VALUES ($1, $2, $3, $4, 'github', NOW(), NOW());
+
+-- name: DeleteUser :exec
+DELETE FROM users WHERE id = $1;

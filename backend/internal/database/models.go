@@ -101,7 +101,8 @@ func (ns NullLanguage) Value() (driver.Value, error) {
 
 type CodeSnippet struct {
 	Name       string
-	QuestionID uuid.UUID
+	QuestionID int32
+	RoomID     uuid.UUID
 	Code       string
 	Language   Language
 	CreatedAt  sql.NullTime
