@@ -31,7 +31,7 @@ func VerifyEmail(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 	err = cfg.DB.SetPendingStatus(r.Context(), database.SetPendingStatusParams{
 		ID:      verificationLink.UserID,
-		Pending: sql.NullBool{Bool: true, Valid: true},
+		Pending: sql.NullBool{Bool: false, Valid: true},
 	})
 	if err != nil {
 		http.Error(w, "Failed to update user", http.StatusInternalServerError)

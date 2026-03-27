@@ -118,7 +118,7 @@ func CreateTemplate(emailData EmailData) (string, error) {
 
 func SendEmail(cfg *config.Config, to, body string) error {
 	auth := smtp.PlainAuth("", cfg.SmtpUser, cfg.SmtpPassword, "smtp.gmail.com")
-	
+
 	msg := []byte("To: " + to + "\r\n" +
 		"From: " + cfg.SmtpUser + "\r\n" +
 		"Subject: Devora - Verify your email\r\n" +
@@ -126,62 +126,62 @@ func SendEmail(cfg *config.Config, to, body string) error {
 		"Content-Type: text/html; charset=\"UTF-8\"\r\n" +
 		"\r\n" +
 		body)
-	
+
 	addr := "smtp.gmail.com:587"
-	
+
 	// Create connection with timeout
 	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMTP server: %w", err)
 	}
 	defer conn.Close()
-	
+
 	// Set read/write deadlines
 	conn.SetDeadline(time.Now().Add(30 * time.Second))
-	
+
 	// Create SMTP client from connection
 	client, err := smtp.NewClient(conn, "smtp.gmail.com")
 	if err != nil {
 		return fmt.Errorf("failed to create SMTP client: %w", err)
 	}
 	defer client.Close()
-	
+
 	// Start TLS
 	tlsConfig := &tls.Config{ServerName: "smtp.gmail.com"}
 	if err = client.StartTLS(tlsConfig); err != nil {
 		return fmt.Errorf("failed to start TLS: %w", err)
 	}
-	
+
 	// Authenticate
 	if err = client.Auth(auth); err != nil {
 		return fmt.Errorf("authentication failed: %w", err)
 	}
-	
+
 	// Set sender
 	if err = client.Mail(cfg.SmtpUser); err != nil {
 		return fmt.Errorf("failed to set sender: %w", err)
 	}
-	
+
 	// Set recipient
 	if err = client.Rcpt(to); err != nil {
 		return fmt.Errorf("failed to set recipient: %w", err)
 	}
-	
+
 	// Send message
 	w, err := client.Data()
 	if err != nil {
 		return fmt.Errorf("failed to get data writer: %w", err)
 	}
-	
+
 	_, err = w.Write(msg)
 	if err != nil {
 		return fmt.Errorf("failed to write message: %w", err)
 	}
-	
+
 	err = w.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close data writer: %w", err)
 	}
-	
+
 	return client.Quit()
 }

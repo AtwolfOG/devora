@@ -34,9 +34,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
 }
 
 func GetIdFromReqCtx(r *http.Request) (uuid.UUID, error) {
-	id, ok := r.Context().Value(userIDKey).(uuid.UUID)
+	id, ok := r.Context().Value(userIDKey).(string)
 	if !ok {
 		return uuid.Nil, errors.New("user id not found in request context")
 	}
-	return id, nil
+	userId, err := uuid.Parse(id)
+	if err != nil {
+		return uuid.Nil, errors.New("user id is not valid")
+	}
+	return userId, nil
 }
