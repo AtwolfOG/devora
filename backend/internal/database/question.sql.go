@@ -47,7 +47,7 @@ func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) 
 }
 
 const getQuestionByID = `-- name: GetQuestionByID :one
-SELECT id, room_id, done, created_at, updated_at, answer, title, description, is_code FROM questions WHERE id = $1 AND room_id = $2
+SELECT id, room_id, done, created_at, updated_at, title, description, is_code FROM questions WHERE id = $1 AND room_id = $2
 `
 
 type GetQuestionByIDParams struct {
@@ -64,7 +64,6 @@ func (q *Queries) GetQuestionByID(ctx context.Context, arg GetQuestionByIDParams
 		&i.Done,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Answer,
 		&i.Title,
 		&i.Description,
 		&i.IsCode,
@@ -73,7 +72,7 @@ func (q *Queries) GetQuestionByID(ctx context.Context, arg GetQuestionByIDParams
 }
 
 const getQuestionsByRoomID = `-- name: GetQuestionsByRoomID :many
-SELECT id, room_id, done, created_at, updated_at, answer, title, description, is_code FROM questions WHERE room_id = $1
+SELECT id, room_id, done, created_at, updated_at, title, description, is_code FROM questions WHERE room_id = $1
 `
 
 func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([]Question, error) {
@@ -91,7 +90,6 @@ func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([
 			&i.Done,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Answer,
 			&i.Title,
 			&i.Description,
 			&i.IsCode,
@@ -110,7 +108,7 @@ func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([
 }
 
 const listQuestions = `-- name: ListQuestions :many
-SELECT id, room_id, done, created_at, updated_at, answer, title, description, is_code FROM questions WHERE room_id = $1
+SELECT id, room_id, done, created_at, updated_at, title, description, is_code FROM questions WHERE room_id = $1
 `
 
 func (q *Queries) ListQuestions(ctx context.Context, roomID uuid.UUID) ([]Question, error) {
@@ -128,7 +126,6 @@ func (q *Queries) ListQuestions(ctx context.Context, roomID uuid.UUID) ([]Questi
 			&i.Done,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Answer,
 			&i.Title,
 			&i.Description,
 			&i.IsCode,

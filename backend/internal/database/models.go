@@ -99,6 +99,14 @@ func (ns NullLanguage) Value() (driver.Value, error) {
 	return string(ns.Language), nil
 }
 
+type Answer struct {
+	QuestionID int32
+	RoomID     uuid.UUID
+	Answer     string
+	CreatedAt  sql.NullTime
+	UpdatedAt  sql.NullTime
+}
+
 type CodeSnippet struct {
 	Name       string
 	QuestionID int32
@@ -122,7 +130,6 @@ type Question struct {
 	Done        bool
 	CreatedAt   sql.NullTime
 	UpdatedAt   sql.NullTime
-	Answer      sql.NullString
 	Title       string
 	Description string
 	IsCode      bool
@@ -143,7 +150,7 @@ type Room struct {
 	IsActive      bool
 	CreatedAt     sql.NullTime
 	UpdatedAt     sql.NullTime
-	ParticipantID uuid.UUID
+	ParticipantID uuid.NullUUID
 }
 
 type User struct {
