@@ -22,19 +22,19 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req CreateRoomRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if req.Name == "" || req.Description == "" || req.StartTime.IsZero() {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
 		return
 	}
 
 	// get user id from request context
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
-		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
 		return
 	}
 	// create room
@@ -46,7 +46,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		StartTime:   req.StartTime,
 	})
 	if err != nil {
-		http.Error(w, "Failed to create room", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create room")
 		return
 	}
 
@@ -56,17 +56,17 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
 	if roomId == "" {
-		http.Error(w, "Missing room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
 		return
 	}
 	roomUUID, err := uuid.Parse(roomId)
 	if err != nil {
-		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		http.Error(w, "Failed to get room", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
 	lib.WriteJSON(w, http.StatusOK, room)
@@ -75,12 +75,12 @@ func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
-		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
 		return
 	}
 	rooms, err := cfg.DB.GetRoomsByOwnerID(r.Context(), userId)
 	if err != nil {
-		http.Error(w, "Failed to get rooms", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
 		return
 	}
 	lib.WriteJSON(w, http.StatusOK, rooms)
@@ -89,33 +89,33 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
 	if roomId == "" {
-		http.Error(w, "Missing room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
 		return
 	}
 	roomUUID, err := uuid.Parse(roomId)
 	if err != nil {
-		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
 	// get user id from request context
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
-		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
 		return
 	}
 	// check if user is the owner of the room
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		http.Error(w, "Failed to get room", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
 	if room.OwnerID != userId {
-		http.Error(w, "You are not the owner of this room", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner of this room")
 		return
 	}
 	err = cfg.DB.DeleteRoom(r.Context(), roomUUID)
 	if err != nil {
-		http.Error(w, "Failed to delete room", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to delete room")
 		return
 	}
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room deleted successfully"})

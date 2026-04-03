@@ -25,28 +25,28 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 	var req SignupRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if req.Email == "" || req.Password == "" || req.Name == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
 		return
 	}
 
 	if !IsValidEmail(req.Email) {
-		http.Error(w, "Invalid email", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Invalid email")
 		return
 	}
 	req.Email = strings.ToLower(req.Email)
 	if !IsValidPassword(req.Password) {
-		http.Error(w, "try a stronger password", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "try a stronger password")
 		return
 	}
 
 	HashedPassword, err := HashPassword(req.Password)
 	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to hash password")
 		return
 	}
 
@@ -58,11 +58,11 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 	if len(existingUsers) > 0 && existingUsers[0].Pending.Bool {
 		err = cfg.DB.DeleteUser(r.Context(), existingUsers[0].ID)
 		if err != nil {
-			http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+			lib.WriteError(w, http.StatusInternalServerError, "Failed to delete user")
 			return
 		}
 	} else if len(existingUsers) > 0 && !existingUsers[0].Pending.Bool {
-		http.Error(w, "User already exists", http.StatusConflict)
+		lib.WriteError(w, http.StatusConflict, "User already exists")
 		return
 	}
 
@@ -74,7 +74,7 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		Name:     req.Name,
 	})
 	if err != nil {
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
 
@@ -85,7 +85,7 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		ExpiresAt: time.Now().Add(15 * time.Minute),
 	})
 	if err != nil {
-		http.Error(w, "Failed to create verification link", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create verification link")
 		return
 	}
 	// send verification email
@@ -99,13 +99,13 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		Year:             time.Now().Year(),
 	})
 	if err != nil {
-		http.Error(w, "Failed to create verification email", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create verification email")
 		return
 	}
 	fmt.Println("template created")
 	err = email.SendEmail(cfg, req.Email, tmpl)
 	if err != nil {
-		http.Error(w, "Failed to send verification email", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to send verification email")
 		return
 	}
 	fmt.Println("email sent")

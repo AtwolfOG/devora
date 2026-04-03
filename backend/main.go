@@ -34,15 +34,15 @@ func main() {
 	dbQueries := database.New(db)
 	config.DB = dbQueries
 
-	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
     AllowedOrigins:   []string{config.FrontendUrl},
     AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
     AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
     ExposedHeaders:   []string{"Link"},
-    AllowCredentials: false,
+    AllowCredentials: true,
     MaxAge:           300, 
   }))
+	r.Use(middleware.Logger)
   
 	authRouter := chi.NewRouter()
 	// this is for testing purposes

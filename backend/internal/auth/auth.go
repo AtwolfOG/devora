@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/AtwolfOG/devora/lib"
 	"github.com/google/uuid"
 )
 
@@ -17,7 +18,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.Header.Get("Authorization")
 		if tokenString == "" {
-			w.WriteHeader(http.StatusUnauthorized)
+			lib.WriteError(w, http.StatusUnauthorized, "Missing token")
 			return
 		}
 
@@ -25,7 +26,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		tokenString = tokenString[7:]
 		claims, err := VerifyJWT(tokenString, []byte(os.Getenv("JWT_SECRET")))
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			lib.WriteError(w, http.StatusUnauthorized, "Invalid token")
 			return
 		}
 		ctx := context.WithValue(r.Context(), userIDKey, claims.Id)

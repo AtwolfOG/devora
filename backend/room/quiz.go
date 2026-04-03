@@ -26,35 +26,35 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	var req CreateQuestionsRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// get user id from request context
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
-		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
 		return
 	}
 	// get room uuid
 	roomUUID, err := uuid.Parse(req.RoomID)
 	if err != nil {
-		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		http.Error(w, "Failed to get room", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
 	// check if user is the owner of the room
 	if room.OwnerID != userId {
-		http.Error(w, "You are not the owner of this room", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner of this room")
 		return
 	}
 	// check if room is active
 	if !room.IsActive {
-		http.Error(w, "Room is not active", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Room is not active")
 		return
 	}
 	for _, question := range req.Questions {
@@ -65,7 +65,7 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 			IsCode:      question.IsCode,
 		})
 		if err != nil {
-			http.Error(w, "Failed to create question", http.StatusInternalServerError)
+			lib.WriteError(w, http.StatusInternalServerError, "Failed to create question")
 			return
 		}
 	}
@@ -75,17 +75,17 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
 	if roomId == "" {
-		http.Error(w, "Missing room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
 		return
 	}
 	roomUUID, err := uuid.Parse(roomId)
 	if err != nil {
-		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
 	questions, err := cfg.DB.GetQuestionsByRoomID(r.Context(), roomUUID)
 	if err != nil {
-		http.Error(w, "Failed to get questions", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get questions")
 		return
 	}
 	lib.WriteJSON(w, http.StatusOK, questions)
@@ -95,21 +95,21 @@ func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Con
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")
 	if questionId == "" || roomId == "" {
-		http.Error(w, "Missing question id or room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing question id or room id")
 		return
 	}
 	questionIdInt, err := strconv.ParseInt(questionId, 10, 32)
 	if err != nil {
-		http.Error(w, "Failed to parse question id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse question id")
 		return
 	}
 	if questionIdInt <= 0 {
-		http.Error(w, "Invalid question id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Invalid question id")
 		return
 	}
 	roomUUID, err := uuid.Parse(roomId)
 	if err != nil {
-		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
 	question, err := cfg.DB.GetQuestionByID(r.Context(), database.GetQuestionByIDParams{
@@ -117,7 +117,7 @@ func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Con
 		RoomID: roomUUID,
 	})
 	if err != nil {
-		http.Error(w, "Failed to get question", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get question")
 		return
 	}
 	lib.WriteJSON(w, http.StatusOK, question)
@@ -127,37 +127,37 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")
 	if questionId == "" || roomId == "" {
-		http.Error(w, "Missing question id or room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing question id or room id")
 		return
 	}
 	questionIdInt, err := strconv.ParseInt(questionId, 10, 32)
 	if err != nil {
-		http.Error(w, "Failed to parse question id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse question id")
 		return
 	}
 	if questionIdInt <= 0 {
-		http.Error(w, "Invalid question id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Invalid question id")
 		return
 	}
 	roomUUID, err := uuid.Parse(roomId)
 	if err != nil {
-		http.Error(w, "Failed to parse room id", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
 	// get user id from request context
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
-		http.Error(w, "Failed to get user id", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
 		return
 	}
 	// check if user is the owner of the room
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		http.Error(w, "Failed to get room", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
 	if room.OwnerID != userId {
-		http.Error(w, "You are not the owner of this room", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner of this room")
 		return
 	}
 
@@ -166,8 +166,8 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		RoomID: roomUUID,
 	})
 	if err != nil {
-		http.Error(w, "Failed to delete question", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to delete question")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Question deleted successfully"})
 }

@@ -13,3 +13,7 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 		log.Printf("writeJSON: %v", err)
 	}
 }
+
+func WriteError(w http.ResponseWriter, status int, message string) {
+	WriteJSON(w, status, map[string]string{"error": message})
+}

@@ -39,7 +39,7 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 
 	refreshToken, err := GenerateRefreshToken()
 	if err != nil {
-		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to generate refresh token")
 		return
 	}
 	err = cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
@@ -48,12 +48,12 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
 	})
 	if err != nil {
-		http.Error(w, "Failed to create refresh token", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create refresh token")
 		return
 	}
 	token, err := GenerateJWT(userId.String(), []byte(cfg.JWTSecret), 1*time.Hour)
 	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to generate token")
 		return
 	}
 	cookie := http.Cookie{
@@ -74,7 +74,7 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		http.Error(w, "Failed to get refresh token", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusUnauthorized, "Failed to get refresh token")
 		return
 	}
 	refreshToken, err := cfg.DB.GetRefreshToken(r.Context(), cookie.Value)
@@ -84,7 +84,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		if err := cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value); err != nil {
 			log.Printf("failed to delete refresh token: %v", err)
 		}
-		http.Error(w, "Failed to get refresh token", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "Failed to get refresh token")
 		return
 	}
 
@@ -95,13 +95,13 @@ func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		if err := cfg.DB.DeleteRefreshToken(r.Context(), cookie.Value); err != nil {
 			log.Printf("failed to delete refresh token: %v", err)
 		}
-		http.Error(w, "Failed to get user", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "Failed to get user")
 		return
 	}
 
 	token, err := GenerateJWT(user.ID.String(), []byte(cfg.JWTSecret), 1*time.Hour)
 	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to generate token")
 		return
 	}
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"access_token": token})

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/AtwolfOG/devora/internal/config"
+	"github.com/AtwolfOG/devora/lib"
 )
 
 type LoginRequest struct {
@@ -16,38 +17,38 @@ func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *conf
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
 	if req.Email == "" || req.Password == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
 		return
 	}
 
 	if !IsValidEmail(req.Email) {
-		http.Error(w, "Invalid email", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Invalid email")
 		return
 	}
 
 	if !IsValidPassword(req.Password) {
-		http.Error(w, "try a stronger password", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "try a stronger password")
 		return
 	}
 
 	user, err := cfg.DB.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "User not found")
 		return
 	}
 
 	if !VerifyPassword(req.Password, user.Password.String) {
-		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "Invalid password")
 		return
 	}
 
 	if user.Pending.Bool {
-		http.Error(w, "User not verified", http.StatusUnauthorized)
+		lib.WriteError(w, http.StatusUnauthorized, "User not verified")
 		return
 	}
 

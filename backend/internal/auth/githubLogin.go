@@ -9,6 +9,7 @@ import (
 
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
+	"github.com/AtwolfOG/devora/lib"
 	"github.com/google/uuid"
 )
 
@@ -78,27 +79,27 @@ func getUser(token string) (*UserResponse, error) {
 func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		http.Error(w, "Missing code", http.StatusBadRequest)
+		lib.WriteError(w, http.StatusBadRequest, "Missing code")
 		return
 	}
 	tokenResponse, err := getAccessToken(code, cfg)
 	if err != nil {
-		http.Error(w, "Failed to get access token", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get access token")
 		return
 	}
 	userResponse, err := getUser(tokenResponse.AccessToken)
 	if err != nil {
-		http.Error(w, "Failed to get user: "+err.Error(), http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user: "+err.Error())
 		return
 	}
 
 	existingUsers, err := cfg.DB.GetUsersByEmail(r.Context(), userResponse.Email)
 	if err != nil {
-		http.Error(w, "Failed to check if user exists", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to check if user exists")
 		return
 	}
 	if len(existingUsers) > 0 {
-		http.Error(w, "User already exists", http.StatusConflict)
+		lib.WriteError(w, http.StatusConflict, "User already exists")
 		return
 	}
 
@@ -110,7 +111,7 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		Email:             userResponse.Email,
 	})
 	if err != nil {
-		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create user: "+err.Error())
 		return
 	}
 	err = cfg.DB.CreateGithubOauth(r.Context(), database.CreateGithubOauthParams{
@@ -118,7 +119,7 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		GithubID: userResponse.ID,
 	})
 	if err != nil {
-		http.Error(w, "Failed to create github oauth", http.StatusInternalServerError)
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create github oauth")
 		return
 	}
 	// this is to send the refresh and access token to the client through cookies and response body
