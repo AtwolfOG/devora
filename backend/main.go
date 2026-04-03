@@ -12,16 +12,11 @@ import (
 	"github.com/AtwolfOG/devora/room"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	_ "github.com/lib/pq"
 )
 
 const port = "8080"
-
-// func dbWrapper(db *database.Queries, handler func(w http.ResponseWriter, r *http.Request, db *database.Queries)) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		handler(w, r, db)
-// 	}
-// }
 
 func configWrapper(config *config.Config, handler func(w http.ResponseWriter, r *http.Request, config *config.Config)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +35,15 @@ func main() {
 	config.DB = dbQueries
 
 	r.Use(middleware.Logger)
+	r.Use(cors.Handler(cors.Options{
+    AllowedOrigins:   []string{config.FrontendUrl},
+    AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+    AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+    ExposedHeaders:   []string{"Link"},
+    AllowCredentials: false,
+    MaxAge:           300, 
+  }))
+  
 	authRouter := chi.NewRouter()
 	// this is for testing purposes
 	authRouter.Use(func(next http.Handler) http.Handler {

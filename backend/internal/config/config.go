@@ -16,10 +16,10 @@ type Config struct {
 	GithubClientSecret string
 	SmtpUser           string
 	SmtpPassword       string
-	BaseURL            string
 	Domain             string
 	AppName            string
 	Environment        string
+	FrontendUrl 	   string
 }
 
 func LoadConfig() *Config {
@@ -34,7 +34,7 @@ func LoadConfig() *Config {
 		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
 		SmtpUser:           os.Getenv("SMTP_USER"),
 		SmtpPassword:       os.Getenv("SMTP_PASSWORD"),
-		BaseURL:            os.Getenv("BASE_URL"),
+		FrontendUrl:        os.Getenv("FRONTEND_URL"),
 		Domain:             os.Getenv("DOMAIN"),
 		AppName:            os.Getenv("APP_NAME"),
 		Environment:        os.Getenv("ENVIRONMENT"),

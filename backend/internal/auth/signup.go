@@ -89,7 +89,7 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		return
 	}
 	// send verification email
-	verificationLink := fmt.Sprintf("%s/auth/verify/%s", cfg.BaseURL, verificationCode)
+	verificationLink := fmt.Sprintf("%s/auth/verify/%s", cfg.FrontendUrl, verificationCode)
 
 	tmpl, err := email.CreateTemplate(email.EmailData{
 		AppName:          cfg.AppName,
