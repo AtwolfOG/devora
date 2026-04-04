@@ -156,3 +156,20 @@ p{
   animation-timing-function: linear;
   animation-name: step-line;
 }
+
+@keyframes slide-in{
+  0%{
+    opacity: 0;
+    scale: .9;
+    transform: translateY(10%);
+  }
+  100%{
+    opacity: 1;
+    scale: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in{
+  animation: slide-in .5s ease-in-out forwards;
+}

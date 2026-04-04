@@ -1,6 +1,6 @@
 export default function Steps(){
     return (
-        <div className="py-10">
+        <div className="py-10 px-3">
             <h5 className="text-center text-(--text-secondary)!">How it works</h5>        
             <h3 className="text-center">Four steps to better Interviews</h3>
             <div className="flex justify-center flex-col m-auto md:w-158 md:items-center my-16">
