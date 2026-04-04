@@ -91,23 +91,25 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 	// send verification email
 	verificationLink := fmt.Sprintf("%s/auth/verify/%s", cfg.FrontendUrl, verificationCode)
 
-	tmpl, err := email.CreateTemplate(email.EmailData{
-		AppName:          cfg.AppName,
-		VerificationLink: verificationLink,
-		RecipientName:    req.Email,
-		ExpiryMinutes:    15,
-		Year:             time.Now().Year(),
-	})
-	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to create verification email")
-		return
-	}
-	fmt.Println("template created")
-	err = email.SendEmail(cfg, req.Email, tmpl)
-	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to send verification email")
-		return
-	}
-	fmt.Println("email sent")
+	go func(){
+		tmpl, err := email.CreateTemplate(email.EmailData{
+			AppName:          cfg.AppName,
+			VerificationLink: verificationLink,
+			RecipientName:    req.Email,
+			ExpiryMinutes:    15,
+			Year:             time.Now().Year(),
+		})
+		if err != nil {
+			fmt.Println("Failed to create verification email:", err)
+			return
+		}
+		fmt.Println("template created")
+		err = email.SendEmail(cfg, req.Email, tmpl)
+		if err != nil {
+			fmt.Println("Failed to send verification email:", err)
+			return
+		}
+		fmt.Println("email sent")
+	}()
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Verification email sent"})
 }
