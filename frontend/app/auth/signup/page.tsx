@@ -3,6 +3,7 @@ import customToast from "@/components/customToast";
 import { ErrorMessage } from "@hookform/error-message";
 import axios from "axios";
 import { Eye, EyeClosed, Mail, TriangleAlert, User } from "lucide-react";
+import Link from "next/link";
 import { useState, type BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
 
@@ -98,6 +99,7 @@ export default function SignUpPage() {
 							<button className="bg-black/45 py-1 px-2 rounded hover:bg-black/65 duration-100 cursor-pointer">Google</button>
 						</div>
 					</div>
+					<p className="text-center opacity-80 text-sm!">Already have an account? <Link href="/auth/login" className="text-(--bg-cta) underline">Login</Link></p>
 				</form>
 			</div>
 		</div>
@@ -113,8 +115,8 @@ async function handleSignUp(data: SignUpForm, e?: BaseSyntheticEvent){
 	}
 	catch(err){
 		if(axios.isAxiosError(err)){
-			console.log(" axios error: ", err.response?.data);
-			customToast.error(err.response?.data.error)
+			const msg = err.response?.data.error || "An error occurred"
+			customToast.error(msg)
 		}
 		else{
 			console.log("error: ", err);

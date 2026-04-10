@@ -7,15 +7,17 @@ export default class customToast{
 				background: "var(--bg-cta)",
 				color: "#fff",
                 border: "1px solid var(--border)!important",
+				opacity: "0.8",
 			},
 		})
 	}
 	static error(message: string){
 		toast.error(message, {
 			style: {
-				background: "var(--bg-destructive)",
-				color: "#fff",
-                border: "1px solid var(--border)!important"
+				background: "hsla(from var(--bg-destructive) h s l / 0.8)",
+				color: "var(--text)",
+                border: "1px solid var(--border)!important",
+				opacity: "0.8",
 			},
 		})
 	}
@@ -24,7 +26,8 @@ export default class customToast{
 			style: {
 				background: "var(--bg-cta)",
 				color: "#fff",
-                border: "1px solid var(--border)!important"
+                border: "1px solid var(--border)!important",
+				opacity: "0.8",
 			},
 		})
 	}

@@ -25,7 +25,7 @@ export default function RootLayout({
         className={`${raleway.variable} ${raleway.className} antialiased`}
       >
         {children}
-        <Toaster/>
+        <Toaster position="top-right"/>
       </body>
     </html>
   );
