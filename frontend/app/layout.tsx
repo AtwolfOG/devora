@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Raleway } from "next/font/google";
+import { Space_Grotesk  } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 
 
-const raleway = Raleway({
-  variable: "--raleway",
+const space_grotesk  = Space_Grotesk ({
+  variable: "--space_grotesk ",
   subsets: ["latin"],
 });
 
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${raleway.variable} ${raleway.className} antialiased`}
+        className={`${space_grotesk.variable} ${space_grotesk.className} antialiased`}
       >
         {children}
         <Toaster position="top-right"/>

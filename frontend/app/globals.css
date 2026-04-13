@@ -6,10 +6,11 @@
   --bg-muted: #162A1B;  
   --bg-cta: #34C759;
   --bg-cta-hover: #2DB350;
+  --bg-cta-darker: hsl(135, 50%, 40%);
   --bg-badge: #35A133;
   --bg-badge-hover: #297c27;
   --foreground: #FFFFFF;
-  --text: #ffffff;
+  --text: #ffffffe2;
   --text-accent: #C8F135;
   --text-secondary: #7A9E82;
   --text-cta: #0A1A0D;
@@ -87,14 +88,14 @@ h5{
   letter-spacing: -0.02em;
   color: hsl(from var(--text) h s 85%);
 }
-h6{
+h6, th{
   font-size: 1.1rem;
   font-weight: 400;
   line-height: 1.2;
   letter-spacing: -0.02em;
   color: hsl(from var(--text) h s  85%);
 }
-p{
+p, td{
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
