@@ -14,7 +14,7 @@ export default class customToast{
 	static error(message: string){
 		toast.error(message, {
 			style: {
-				background: "hsla(from var(--bg-destructive) h s l / 0.8)",
+				background: "hsla(from var(--destructive) h s l / 0.8)",
 				color: "var(--text)",
                 border: "1px solid var(--border)!important",
 				opacity: "0.8",

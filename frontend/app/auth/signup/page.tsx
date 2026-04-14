@@ -45,7 +45,7 @@ export default function SignUpPage() {
 						<ErrorMessage
 							errors={errors}
 							name="name"
-							render={({ message }) => <p className="text-(--bg-destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
+							render={({ message }) => <p className="text-(--destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
 						/>
 					</div>
 					<div>
@@ -66,7 +66,7 @@ export default function SignUpPage() {
 						<ErrorMessage
 							errors={errors}
 							name="email"
-							render={({ message }) => <p className="text-(--bg-destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
+							render={({ message }) => <p className="text-(--destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
 						/>
 					</div>
 					<div>
@@ -89,7 +89,7 @@ export default function SignUpPage() {
 						<ErrorMessage
 							errors={errors}
 							name="password"
-							render={({ message }) => <p className="text-(--bg-destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
+							render={({ message }) => <p className="text-(--destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
 						/>
 					</div>
 					<div className="flex justify-center gap-8 flex-col my-4 opacity-80">
