@@ -1,6 +1,7 @@
 import { StatusBtn } from "@/components/statusBtn";
 import { DialogContent, DialogHeader, Dialog, DialogDescription, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-import { Calendar, CircleX, Copy, Play, Plus, Trash2 } from "lucide-react";
+import { CircleX, Copy, Play, Plus, Trash2 } from "lucide-react";
+import { DetailsCard } from "./detailsCard";
 
 export default function InterviewPage(){
 	return (
@@ -26,37 +27,7 @@ export default function InterviewPage(){
 	)
 } 
 
-function DetailsCard(){
-    return (
-        <div className="my-6 bg-(--bg-muted)/60 border-(--border) border rounded-lg p-6">
-            <h4 className=" text-xl!">Interview Details</h4>
-            <div>
-                <form action="" className="flex flex-col gap-2 my-8">
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="title">Role</label>
-                        <input type="text" id="title" name="title" className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="title">Company</label>
-                        <input type="text" id="title" name="title" className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="date">Date</label>
-                        <button className="flex items-center justify-between bg-(--bg-muted)/80 border-(--border) border text-(--text-secondary) rounded-lg px-4 py-2 outline-none">2026-04-15 <Calendar /></button>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="time">Time</label>
-                        <input type="time" id="time" name="time" className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
-                    </div>
-                </form>
-                <div className="flex items-center gap-2">
-                    <button className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg">Save Changes</button>
-                    <button className="text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-muted) border border-(--border-light) duration-200 px-4 py-2 rounded-lg">Cancel</button>
-                </div>
-            </div>
-        </div>
-    )
-}
+
 
 function ProblemsCard(){
     return (

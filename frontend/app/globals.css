@@ -17,6 +17,7 @@
   --border: #243D29;
   --border-light: #2E5235;
   --destructive: #FF453A;
+  accent-color: var(--bg-cta)!important;
 }
 
 
