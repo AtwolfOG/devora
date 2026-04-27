@@ -16,11 +16,11 @@ export function DetailsCard(){
                 <form action="" onSubmit={handleSubmit((data) => console.log(data))} className="flex flex-col gap-2 mt-8">
                     <div className="flex flex-col gap-2">
                         <label htmlFor="title">Role</label>
-                        <input type="text" id="title" {...register("title", {required: true})} className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
+                        <input type="text" id="title" {...register("title", {required: true})} className="px-4 py-2" />
                     </div>
                     <div className="flex flex-col gap-2">
                         <label htmlFor="title">Company</label>
-                        <input type="text" id="title" {...register("company", {required: true})} className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
+                        <input type="text" id="title" {...register("company", {required: true})} className="px-4 py-2" />
                     </div>
                     <div className="flex flex-col gap-2">
                         <label htmlFor="date">Date</label>
@@ -47,7 +47,7 @@ export function DetailsCard(){
                     </div>
                     <div className="flex flex-col gap-2">
                         <label htmlFor="time">Time</label>
-                        <input type="time" id="time" {...register("time", {required: true})} defaultValue={"12:38"} className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
+                        <input type="time" id="time" {...register("time", {required: true})} defaultValue={"12:38"} className="px-4 py-2" />
                     </div>
                     <div className="flex items-center gap-2 mt-8">
                         <button type="submit" className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg">Save Changes</button>

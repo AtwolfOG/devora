@@ -3,7 +3,7 @@ import { DialogContent, DialogHeader, Dialog, DialogDescription, DialogTitle, Di
 import { FileCode, Plus, TextIcon, Trash2 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { useForm} from "react-hook-form";
+import { useForm, type FieldValues} from "react-hook-form";
 import { Editor } from "@monaco-editor/react";
 
 
@@ -91,7 +91,7 @@ function AddProblemModal({fetchProblems}: {fetchProblems: () => void}){
     const {register, watch, handleSubmit, formState: {isSubmitting}} = useForm()
     const params = useParams();
     const language = watch("language");
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: FieldValues) => {
         console.log(data);
         try{
             const response = await fetch(`/api/interviews/${params.id}/problems`, {

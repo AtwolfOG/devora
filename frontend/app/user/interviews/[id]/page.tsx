@@ -2,7 +2,7 @@
 import { StatusBtn } from "@/components/statusBtn";
 import { CircleX, Copy, Play, Trash2 } from "lucide-react";
 import { DetailsCard } from "./detailsCard";
-import { ProblemsCard } from "./addProblem";
+import { ProblemsCard } from "./problem";
 import customToast from "@/components/customToast";
 
 export default function InterviewPage(){

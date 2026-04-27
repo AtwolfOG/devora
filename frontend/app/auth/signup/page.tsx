@@ -23,14 +23,14 @@ export default function SignUpPage() {
 	const [showPassword, setShowPassword] = useState(false);
 	const { register, handleSubmit, formState: { errors, isSubmitSuccessful, isSubmitting } } = useForm<SignUpForm>();
 	return (
-		<div className="flex items-center justify-center h-screen w-full">
+		<main className="flex items-center justify-center h-screen w-full">
 			<div className="flex flex-col items-center justify-center max-w-[450px] w-[90%] rounded-2xl shadow-2xl backdrop-blur-lg bg-black/10  border-(--border) p-8 opacity-85 animate-slide-in">
-				<h3 className="mb-8">Sign Up</h3>
+				<header className="mb-8 text-4xl">Sign Up</header>
 				<form action="" className="flex flex-col px-4 justify-center gap-6  w-full">
 					<div>
 						<div className="flex flex-col gap-2 relative">
 							<label htmlFor="name" className="text-sm">Username</label>
-							<input type="text" placeholder="Username" className="border rounded-md border-(--border) py-2 px-4 focus:outline-none focus:border-(--bg-cta)" {...register("name", {
+							<input type="text" placeholder="Username" className="bg-transparent! py-2 px-4 " {...register("name", {
 								required: {
 									value: true,
 									message: "Username is required",
@@ -51,7 +51,7 @@ export default function SignUpPage() {
 					<div>
 						<div className="flex flex-col gap-2 relative">
 							<label htmlFor="email" className="text-sm">Email</label>
-							<input type="email" placeholder="Email" className="border rounded-md border-(--border) py-2 px-4 focus:outline-none focus:border-(--bg-cta)" {...register("email", {
+							<input type="email" placeholder="Email" className="bg-transparent! py-2 px-4" {...register("email", {
 							required: {
 								value: true,
 								message: "Email is required",
@@ -72,7 +72,7 @@ export default function SignUpPage() {
 					<div>
 						<div className="flex flex-col gap-2 relative">
 							<label htmlFor="password" className="text-sm">Password</label>
-							<input type={showPassword ? "text" : "password"} placeholder="Password" className="border rounded-md border-(--border) py-2 px-4 focus:outline-none focus:border-(--bg-cta)" {...register("password", {
+							<input type={showPassword ? "text" : "password"} placeholder="Password" className="bg-transparent! py-2 px-4" {...register("password", {
 										  required: {
 											value: true,
 											message: "Password is required",
@@ -102,7 +102,7 @@ export default function SignUpPage() {
 					<p className="text-center opacity-80 text-sm!">Already have an account? <Link href="/auth/login" className="text-(--bg-cta) underline">Login</Link></p>
 				</form>
 			</div>
-		</div>
+		</main>
 	);
 }
 

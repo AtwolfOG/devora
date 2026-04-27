@@ -1,7 +1,7 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Ellipsis, Link, Pencil, Share, Trash } from "lucide-react";
-
+import { Ellipsis, Pencil, Share, Trash } from "lucide-react";
+import Link from "next/link";
 const yourInterviews = [
     {
         candidate: "John Doe",
@@ -74,19 +74,18 @@ export default function InterviewsPage(){
                                 <TableHead>Time</TableHead>
                                 <TableHead>Company</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Actions</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {yourInterviews.map((interview, index) => (
-                                // <Link href={`/user/interviews/${index}`}>
-                                    <TableRow key={index} className="border-(--border)">
-                                        <TableCell>{interview.role}</TableCell>
+                                    <TableRow key={index} className="border-(--border) relative">
+                                        <TableCell><Link href={`/user/interviews/${index}`} className="absolute inset-0 hover:bg-black/10 hover:rounded-2xl duration-100" aria-label="view interview"/>{interview.role}</TableCell>
                                         <TableCell>{interview.candidate}</TableCell>
                                         <TableCell>{interview.date + " " + interview.time}</TableCell>
                                         <TableCell>{interview.company}</TableCell>
                                         <TableCell>{interview.status}</TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-center isolate">
                                             <DropdownMenu >
                                                 <DropdownMenuTrigger>
                                                     <div className="hover:bg-(--bg-cta)/10! p-1 rounded-lg">
@@ -111,7 +110,6 @@ export default function InterviewsPage(){
                                             </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
-                                // </Link>
                             ))}
                         </TableBody>
                     </Table>
@@ -135,8 +133,8 @@ export default function InterviewsPage(){
                         </TableHeader>
                         <TableBody>
                             {otherInterviews.map((interview, index) => (
-                                <TableRow key={index} className="border-(--border)">
-                                    <TableCell>{interview.interviewer}</TableCell>
+                                <TableRow key={index} className="relative border-(--border)">
+                                    <TableCell><Link href={`/user/interviews/${index}`} className="absolute inset-0 hover:bg-black/10 hover:rounded-2xl duration-100" aria-label="view interview"/>{interview.interviewer}</TableCell>
                                     <TableCell>{interview.role}</TableCell>
                                     <TableCell>{interview.date + " " + interview.time}</TableCell>
                                     <TableCell>{interview.status}</TableCell>

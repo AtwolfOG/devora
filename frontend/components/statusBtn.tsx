@@ -5,3 +5,4 @@ export function StatusBtn({children, disabled, className}: {children: React.Reac
 		</button>
 	)
 }
+// "pending" | "live" | "reviewing" | "completed" | "cancelled"
