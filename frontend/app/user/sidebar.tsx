@@ -2,28 +2,39 @@
 import { LayoutDashboard, Menu, Notebook, Settings, Video, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Sidebar(){
     const [toggle, setToggle] = useState<boolean>(false);
     const pathname = usePathname();
-    console.log("pathname: ", pathname)
+    const sidebarRef = useRef<HTMLDivElement>(null)
     const navLinks = [
         { href: "/user/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { href: "/user/interviews", label: "Interviews", icon: Video },
         { href: "/user/reviews", label: "Reviews", icon: Notebook },
         { href: "/user/settings", label: "Settings", icon: Settings },
     ];
+    useEffect(() => {
+        const onclick = (e: MouseEvent)=>{
+            if (sidebarRef.current == undefined  || window == undefined) return;
+            const width = sidebarRef.current?.offsetLeft + 250
+            if (toggle == true && e.clientX > width){
+                setToggle(false)
+            }
+        }
+        window.addEventListener("click", onclick)
+        return () => window.removeEventListener("click", onclick)
+    },[toggle])
 
     return (
         <>
       <button
-        onClick={() => setToggle((state) => !state)}
+        onClick={(e) => {setToggle((state) => !state); e.stopPropagation()}}
         className="outline-none rounded-xl backdrop-blur-xl absolute right-0 p-2 size-12 text-3xl bg-[hsl(from_var(--bg-cta)_h_s_15%)] m-4 md:hidden "
       >
         {toggle ? <X /> : <Menu />}
       </button>
-        <div className={`${toggle ? "left-0" : ""} w-[250px] -left-full h-screen bg-(--bg-muted) bg-red! text-(--text-secondary) z-50 max-md:absolute transition-all duration-300 ease-in-out`}>
+        <div ref={sidebarRef} className={`${toggle ? "left-0" : ""} w-[250px] -left-full h-screen bg-(--bg-muted) bg-red! text-(--text-secondary) z-50 max-md:absolute transition-all duration-300 ease-in-out`}>
              
 
             <div className="p-4">

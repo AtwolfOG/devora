@@ -66,9 +66,9 @@ export default function InterviewsPage(){
                 <h5 className="text-(--text-primary)">Created by you</h5>
                 <p className="text-sm!">Interviews you created</p>
                 <div className="my-4">
-                    <Table>
+                    <Table className="border border-(--border)">
                         <TableHeader>
-                            <TableRow className="border-(--border) bg-(--bg-muted)">
+                            <TableRow className="border-(--border) border bg-(--bg-muted)">
                                 <TableHead>Role</TableHead>
                                 <TableHead>Candidate</TableHead>
                                 <TableHead>Time</TableHead>
@@ -88,7 +88,7 @@ export default function InterviewsPage(){
                                         <TableCell className="text-center isolate">
                                             <DropdownMenu >
                                                 <DropdownMenuTrigger>
-                                                    <div className="hover:bg-(--bg-cta)/10! p-1 rounded-lg">
+                                                    <div className="cursor-pointer hover:bg-(--bg-cta)/10! p-1 rounded-lg">
                                                         <Ellipsis />
                                                     </div>
                                                 </DropdownMenuTrigger>
@@ -122,9 +122,9 @@ export default function InterviewsPage(){
                 <p className="text-sm!">Interviews created by others</p>
                 
                 <div className="my-4">
-                    <Table>
+                    <Table className="border border-(--border)">
                         <TableHeader>
-                            <TableRow className="border-(--border) bg-(--bg-muted)">
+                            <TableRow className="border-(--border) border bg-(--bg-muted)">
                                 <TableHead>Interviewer</TableHead>
                                 <TableHead>Role</TableHead>
                                 <TableHead>Time</TableHead>

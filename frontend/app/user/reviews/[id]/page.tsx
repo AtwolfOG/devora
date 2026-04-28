@@ -1,5 +1,6 @@
 import { StatusBtn } from "@/components/statusBtn";
 import {Problems, type problemType} from "./problems"
+import Feedback from "./feedback";
 
 const testData: problemType[] = [
     {
@@ -18,7 +19,8 @@ function main() {
         title: "Reverse String",
         description: "Write a function that reverses a string.",
         type: "text",
-        answer: "This is the answer to this question, I hope this is answer was meaningful my lordship, azula op"
+        answer: "This is the answer to this question, I hope this is answer was meaningful my lordship, azula op",
+        pass: false
     },
     {
         id: "3",
@@ -28,7 +30,8 @@ function main() {
         lang: "python",
         code: `# write your boilerplate code for the answer here
 def main():
-    `
+    `,
+    pass: true
     }
 ]
 export default function Page() {
@@ -49,9 +52,10 @@ export default function Page() {
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
-                <p className="text-sm! text-(--text-secondary)">For the mean time youtube will be used to store your interview&apos;s recording. Don&apos;t they are protected and can&apos;t be viewed by another user except you this interview link</p>
+                <p className="text-sm! text-(--text-secondary)">For the mean time youtube will be used to store your interview&apos;s recording. Don&apos;t worry they are protected and can&apos;t be viewed by another user except you share this review link</p>
             </div>
             <Problems problems={testData} />
+            <Feedback/>
         </main>
     )
 }

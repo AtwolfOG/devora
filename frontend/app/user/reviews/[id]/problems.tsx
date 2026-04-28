@@ -1,7 +1,9 @@
 "use client"
-import { DialogContent, DialogHeader, Dialog, DialogDescription, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { StatusBtn } from "@/components/statusBtn";
+import { DialogContent, DialogHeader, Dialog, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Editor } from "@monaco-editor/react";
-import { Ellipsis, FileCode, TextIcon } from "lucide-react";
+import { CheckCircle, Circle, Ellipsis, FileCode, TextIcon, XCircle } from "lucide-react";
 
 export type problemType = {
     id: string;
@@ -11,6 +13,7 @@ export type problemType = {
     code?: string;
     lang?: string;
     answer?: string
+    pass?: boolean | null;
 }
 export function Problems({problems}:{problems: problemType[]}){
     return(
@@ -22,7 +25,39 @@ export function Problems({problems}:{problems: problemType[]}){
                     <div key={problem.id} className="flex items-center gap-2 bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2">
                         {problem.type == "code"? <div className="p-2 bg-(--bg-light) text-(--text-secondary)/70 rounded-lg"><FileCode /> </div>: <div className="p-2 bg-(--bg-light) text-(--text-secondary)/70 rounded-lg"><TextIcon /></div>}
                         <div className="flex flex-col gap-1">
-                            <h5>{problem.title}</h5>
+                            <div className="flex gap-2 items-center">
+                                <h5>{problem.title}</h5>
+                                {
+                                    problem.pass == true && <Tooltip>
+                                        <TooltipTrigger>
+                                            <CheckCircle className="text-(--bg-cta) cursor-pointer" size={16} />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p className="text-(--bg-cta)!">Pass</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                }
+                                {
+                                    problem.pass == false && <Tooltip>
+                                        <TooltipTrigger>
+                                            <XCircle className="text-(--destructive) cursor-pointer" size={16} />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p className="text-(--destructive)!">Fail</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                }
+                                {
+                                    problem.pass == null && <Tooltip>
+                                        <TooltipTrigger>
+                                            <Circle className="text-(--text-secondary) cursor-pointer" size={16} />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p className="text-(--text-secondary)!">Pending</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                }
+                            </div>
                             <p className="text-(--text-secondary) text-sm!">{problem.description}</p>
                         </div>
                         <ReviewProblemModal problem={problem} />
@@ -37,7 +72,7 @@ export function Problems({problems}:{problems: problemType[]}){
 function ReviewProblemModal({problem}: {problem: problemType}){
     return (
         <Dialog>
-            <DialogTrigger className="ml-auto hover:bg-(--bg-cta)/10! p-1 rounded-lg"><Ellipsis/></DialogTrigger>
+            <DialogTrigger className="cursor-pointer ml-auto hover:bg-(--bg-cta)/10! p-1 rounded-lg"><Ellipsis/></DialogTrigger>
             <DialogContent className="max-w-[calc(100%-2rem)]">
                 <DialogHeader>
                     <DialogTitle>{problem.title}</DialogTitle>

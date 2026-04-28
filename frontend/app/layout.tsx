@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk  } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 
 const space_grotesk  = Space_Grotesk ({
@@ -24,7 +25,9 @@ export default function RootLayout({
       <body
         className={`${space_grotesk.variable} ${space_grotesk.className} antialiased`}
       >
-        {children}
+        <TooltipProvider>
+          {children}
+        </TooltipProvider>
         <Toaster position="top-right"/>
       </body>
     </html>

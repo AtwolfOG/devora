@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, Clock, Plus, Trophy } from "lucide-react";
+import Link from "next/link";
 
 
 const upcomingInterviews = [
@@ -57,7 +58,7 @@ export default function DashboardPage(){
                     <p className="text-sm!">Track your interviews and performance</p>
                 </div>
                 <div>
-                    <button className="flex gap-2 items-center px-2 py-2 bg-(--bg-cta) hover:bg-(--bg-cta-hover) rounded-lg w-max">
+                    <button className="cursor-pointer flex gap-2 items-center px-2 py-2 bg-(--bg-cta) hover:bg-(--bg-cta-hover) rounded-lg w-max">
                         <Plus/>
                         Create an Interview
                     </button>
@@ -81,7 +82,7 @@ export default function DashboardPage(){
             <div className="my-18">
                 <div className="flex justify-between items-center mb-4">
                     <h4 className="text-(--text-primary)">Upcoming Interviews</h4>
-                    <p className="text-sm!">View all</p>
+                    <Link href="/user/interviews" className="relative text-(--text-secondary) text-sm! after:content-[''] after:absolute after:-bottom-px after:left-0 after:h-px after:w-0 after:bg-(--text-secondary) after:transition-all after:duration-100 after:ease-in-out hover:after:w-full">View all</Link>
                 </div>
 
                 <div className="flex flex-col gap-4">
@@ -93,7 +94,7 @@ export default function DashboardPage(){
              <div className="my-18">
                 <div className="flex justify-between items-center mb-4">
                     <h4 className="text-(--text-primary)">Past Interviews</h4>
-                    <p className="text-sm!">View all</p>
+                    <Link href="/user/interviews" className="relative text-(--text-secondary) text-sm! after:content-[''] after:absolute after:-bottom-px after:left-0 after:h-px after:w-0 after:bg-(--text-secondary) after:transition-all after:duration-100 after:ease-in-out hover:after:w-full">View all</Link>
                 </div>
 
                 <div>
@@ -116,7 +117,7 @@ function UpcomingInterviewCard({company, role, date, time, interviewer}: {compan
                 <p className="text-sm!  ml-4">with {interviewer}</p>
                 </div>
             </div>
-            <button className="px-4 py-2 bg-(--bg-cta-darker) hover:bg-(--bg-cta-hover) text-(--text-primary) rounded-lg md:block hidden">Join Interview</button>
+            <button className="cursor-pointer px-4 py-2 bg-(--bg-cta-darker) hover:bg-(--bg-cta-hover) text-(--text-primary) rounded-lg md:block hidden">Join Interview</button>
         </div>
     )
 }
@@ -124,9 +125,9 @@ function UpcomingInterviewCard({company, role, date, time, interviewer}: {compan
 function PastInterviewCard({data}: {data: {company: string, role: string, date: string, time: string, interviewer: string}[]}){
     return (
         <div className="flex justify-between items-center gap-4 py-4 md:px-6 px-2 border-(--border)  rounded-lg">
-            <Table>
+            <Table className="border border-(--border)">
                 <TableHeader>
-                    <TableRow className="border-(--border)">
+                    <TableRow className="border-(--border) border bg-(--bg-muted)">
                         <TableHead className="">Company</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Date</TableHead>

@@ -190,7 +190,7 @@ select option{
   background-color: var(--bg-light);
 }
 
-input {
+input, textarea {
   background-color: hsl(from var(--bg-muted) h s l / 80%);
   position: relative;
   border: 1px solid var(--border);
