@@ -178,6 +178,7 @@ p, td{
 
 select{
   background-color: hsl(from var(--bg-muted) h s l / 80%);
+  /* position: relative; */
   padding: .25rem  .5rem;
   border: 1px solid var(--border);
   border-radius: .5rem;

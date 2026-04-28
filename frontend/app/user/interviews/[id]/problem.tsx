@@ -28,24 +28,24 @@ func main() {
 }`
 }
 
-const testData = [
+const testData: Problem[] = [
     {
-        "id": "1",
-        "title": "Two Sum",
-        "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-        "type": "code"
+        id: "1",
+        title: "Two Sum",
+        description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+        type: "code"
     },
     {
-        "id": "2",
-        "title": "Reverse String",
-        "description": "Write a function that reverses a string.",
-        "type": "text"
+        id: "2",
+        title: "Reverse String",
+        description: "Write a function that reverses a string.",
+        type: "text"
     },
     {
-        "id": "3",
-        "title": "FizzBuzz",
-        "description": "Write a function that prints numbers from 1 to n. For multiples of 3, print \"Fizz\", for multiples of 5, print \"Buzz\", and for multiples of both, print \"FizzBuzz\".",
-        "type": "code"
+        id: "3",
+        title: "FizzBuzz",
+        description: "Write a function that prints numbers from 1 to n. For multiples of 3, print \"Fizz\", for multiples of 5, print \"Buzz\", and for multiples of both, print \"FizzBuzz\".",
+        type: "code"
     }
 ]
 
@@ -125,15 +125,15 @@ function AddProblemModal({fetchProblems}: {fetchProblems: () => void}){
                             <div className="flex flex-col gap-2 w-full max-w-[350px] min-w-[320px]">
                                 <div className="flex flex-col gap-1">
                                     <label htmlFor="title">Title</label>
-                                    <input {...register("title", {required: true})} placeholder="title" className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
+                                    <input {...register("title", {required: true})} placeholder="title" className="px-4 py-2" />
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <label htmlFor="description">Description</label>
-                                    <input {...register("description", {required: true})} placeholder="description" className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-4 py-2 outline-none" />
+                                    <input {...register("description", {required: true})} placeholder="description" className="px-4 py-2" />
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <label htmlFor="type">Type</label>
-                                    <select {...register("type", {required: true, onChange: (e) => setType(e.target.value)})} className="bg-(--bg-muted)/80 border-(--border) border rounded-lg px-2 py-2 outline-none">
+                                    <select {...register("type", {required: true, onChange: (e) => setType(e.target.value)})} className="px-2 py-2">
                                         <option value="">Select Problem Type</option>
                                         <option value="coding">Coding</option>
                                         <option value="text">Text</option>
@@ -142,7 +142,7 @@ function AddProblemModal({fetchProblems}: {fetchProblems: () => void}){
                             </div>
                             {type === "coding" && (
                                 <div className="flex flex-col gap-2">
-                                    <select {...register("language", {required: true})} className="w-[150px] bg-(--bg-muted)/80 border-(--border) border rounded-lg px-2 py-2 outline-none">
+                                    <select {...register("language", {required: true})} className="w-[150px] px-2 py-2">
                                         <option value="javascript">JavaScript</option>
                                         <option value="python">Python</option>
                                         <option value="go">Go</option>

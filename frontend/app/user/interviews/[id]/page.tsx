@@ -10,15 +10,15 @@ export default function InterviewPage(){
 		<div className="@4xl:grid @4xl:grid-cols-2 @4xl:gap-4">
 			<div className="@4xl:col-span-1">
                 <div>
-                                <div className="flex items-center gap-4">
-                                    <h3 className="text-3xl!">Senior Backend Engineer Interview</h3>
-                                    <StatusBtn className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60">Completed</StatusBtn>
-                                </div>
-                                <p className="text-(--text-secondary) text-sm! my-1">Manage details, participants, and session settings</p>
-                            </div>
+                    <header className="flex items-center gap-4">
+                        <h3 className="text-3xl!">Senior Backend Engineer Interview</h3>
+                        <StatusBtn className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60">Completed</StatusBtn>
+                    </header>
+                    <p className="text-(--text-secondary) text-sm! my-1">Manage details, participants, and session settings</p>
+                </div>
                 
-                            <DetailsCard />
-                            <ProblemsCard />
+                <DetailsCard />
+                <ProblemsCard />
             </div>
             <div className="@3xl:col-span-1">
                             <Invite/>
