@@ -11,7 +11,7 @@ type Problem = {
     id: string;
     title: string;
     description: string;
-    type: string;
+    type: "text"|"code";
 }
 
 const boilerplate: Record<string, string> = {
@@ -152,8 +152,8 @@ function AddProblemModal({fetchProblems}: {fetchProblems: () => void}){
                             )}
                         </div>
                         <div className="flex items-center gap-2 mt-4">
-                            <button type="submit" disabled={isSubmitting} className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg">Add</button>
-                            <DialogClose render={<button className="text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-muted) border border-(--border-light) duration-200 px-4 py-2 rounded-lg">Cancel</button>} />
+                            <button type="submit" disabled={isSubmitting} className="cursor-pointer bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 border border-(--border-light) duration-200 text-(--text-cta) px-4 py-2 rounded-lg">Add</button>
+                            <DialogClose render={<button className="cursor-pointer text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-muted) border border-(--border-light) duration-200 px-4 py-2 rounded-lg">Cancel</button>} />
                         </div>
                     </form>
                 </div>
