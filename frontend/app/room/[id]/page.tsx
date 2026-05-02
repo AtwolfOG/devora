@@ -1,6 +1,7 @@
 "use client"
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { cn } from "@/lib/utils";
 import { useCheckWindowDimension } from "@/lib/windowDimesion";
 import { Editor } from "@monaco-editor/react"
 import { ArrowLeft, Check, Clock, FileCode, Mic, PhoneOff, Play, TextIcon, Trash2, Video } from "lucide-react"
@@ -49,7 +50,40 @@ const testData: Problem[] = [
         type: "code",
         boilerplateCode: "",
         language: "python"
-    }
+    },
+    {
+        id: "4",
+        title: "Add Two Numbers",
+        description: "You are given two non-empty linked lists representing two non-negative integers. Each element in the linked list contains a single digit. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.\n\n You may assume the two numbers do not contain any leading zero, except the number 0 itself.",
+        type: "code",
+        boilerplateCode: "",
+        language: "python"
+    },
+    {
+        id: "5",
+        title: "Longest Substring Without Repeating Characters",
+        description: "Given a string s, find the length of the longest substring without repeating characters.",
+        type: "code",
+        boilerplateCode: "",
+        language: "python"
+    },
+    {
+        id: "6",
+        title: "Longest Substring Without Repeating Characters",
+        description: "Given a string s, find the length of the longest substring without repeating characters.",
+        type: "code",
+        boilerplateCode: "",
+        language: "python"
+    },
+    {
+        id: "7",
+        title: "Longest Substring Without Repeating Characters",
+        description: "Given a string s, find the length of the longest substring without repeating characters.",
+        type: "code",
+        boilerplateCode: "",
+        language: "python"
+    },
+    
 ]
 export default function RoomPage(){
     const isMobile = useCheckWindowDimension(1024);
@@ -102,11 +136,11 @@ function MobileUI(){
 function DesktopUI(){
     return (
         <ResizablePanelGroup orientation="horizontal">
-            <ResizablePanel defaultSize={50}>
+            <ResizablePanel defaultSize={50} className="flex flex-col!">
                 <ProblemDesktopUI />
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50}>
+            <ResizablePanel defaultSize={50} className="flex flex-col!">
                 <CallUI />
             </ResizablePanel>
         </ResizablePanelGroup>
@@ -116,17 +150,17 @@ function DesktopUI(){
 function CallUI(){
     return (
         <div className="flex flex-col flex-1 mt-4 bg-(--bg-light) border border-(--border) rounded">
-                <div className="h-full flex-1">
-                    <div className="h-full flex-1"></div>
-                    <div className="h-[20%] max-h-[150px]"></div>
-                </div>
-                <div className="flex justify-center gap-4 items-end py-2 bg-(--bg-muted)">
-                    <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg"><Video size={20}/> Video</button>
-                    <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg"><Mic size={20}/> Mic</button>
-                    <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-(--destructive)/20 hover:bg-(--destructive)/40 border border-(--destructive)/40 text-(--text-primary) rounded-lg">
-                   <PhoneOff size={20}/> {isOwner ?  "End Call" : "Leave call"} </button>
-                </div>
+            <div className="h-full flex-1">
+                <div className="h-full flex-1"></div>
+                <div className="h-[20%] max-h-[150px]"></div>
             </div>
+            <div className="flex justify-center gap-4 items-end py-2 bg-(--bg-muted)">
+                <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg"><Video size={20}/> Video</button>
+                <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg"><Mic size={20}/> Mic</button>
+                <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-(--destructive)/20 hover:bg-(--destructive)/40 border border-(--destructive)/40 text-(--text-primary) rounded-lg">
+                <PhoneOff size={20}/> {isOwner ?  "End Call" : "Leave call"} </button>
+            </div>
+        </div>
     )
 }
 
@@ -227,7 +261,7 @@ function SolvingUI({problem, setIsSolving}: {problem:Problem, setIsSolving?: (is
             {
                 problem.type === "code" ? 
                 <div className="flex-1">
-                    <h4 className="mx-6 mb-3">{problem.title}</h4>
+                    <h5 className={cn("mb-2", setIsSolving ? "mx-6" : "mx-2")}>{problem.title}</h5>
                     <ResizablePanelGroup orientation="vertical" className="h-full w-full!">
                         <ResizablePanel defaultSize={50} minSize={30}>
                             <Editor language={problem.language} className="" theme="vs-dark" defaultValue={problem?.boilerplateCode}/>
