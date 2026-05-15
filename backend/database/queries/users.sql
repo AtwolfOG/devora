@@ -1,5 +1,7 @@
--- name: CreateUserWithEmailPassword :exec
-INSERT INTO users (id, email, password, name, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW());
+-- name: CreateUser :one
+INSERT INTO users (email, name, verified) VALUES ($1, $2, $3)
+ON CONFLICT (email) DO NOTHING
+RETURNING id;
 
 -- name: GetUsersByEmail :many
 SELECT * FROM users WHERE email = $1;
@@ -10,14 +12,14 @@ SELECT * FROM users WHERE email = $1;
 -- name: GetUserById :one
 SELECT * FROM users WHERE id = $1;
 
--- name: SetPendingStatus :exec
-UPDATE users SET pending = $1 WHERE id = $2;
+-- name: CheckUserExists :one
+SELECT EXISTS(SELECT 1 FROM users WHERE email = $1);
 
--- name: GetPendingStatus :one
-SELECT pending FROM users WHERE id = $1;
-
--- name: CreateUserWithGithub :exec
-INSERT INTO users (id, name, email, profile_picture_url, auth, created_at, updated_at) VALUES ($1, $2, $3, $4, 'github', NOW(), NOW());
+-- name: GetUnverifiedUserByEmail :one
+SELECT * FROM users WHERE email = $1 AND verified = FALSE;
 
 -- name: DeleteUser :exec
 DELETE FROM users WHERE id = $1;
+
+-- name: VerifyUser :exec
+UPDATE users SET verified = TRUE WHERE id = $1;

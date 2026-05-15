@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -43,73 +44,133 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		lib.WriteError(w, http.StatusBadRequest, "try a stronger password")
 		return
 	}
-
-	HashedPassword, err := HashPassword(req.Password)
-	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to hash password")
-		return
-	}
-
-	existingUsers, err := cfg.DB.GetUsersByEmail(r.Context(), req.Email)
-	if err != nil {
-		http.Error(w, "Failed to check if user exists", http.StatusInternalServerError)
-		return
-	}
-	if len(existingUsers) > 0 && existingUsers[0].Pending.Bool {
-		err = cfg.DB.DeleteUser(r.Context(), existingUsers[0].ID)
+	// check if user exists and is unverified
+	exists, userID, err := isUserUnverified(r.Context(), cfg, req)
+	if exists {
 		if err != nil {
-			lib.WriteError(w, http.StatusInternalServerError, "Failed to delete user")
+			lib.WriteError(w, http.StatusInternalServerError, "Failed to signup User")
 			return
 		}
-	} else if len(existingUsers) > 0 && !existingUsers[0].Pending.Bool {
-		lib.WriteError(w, http.StatusConflict, "User already exists")
+		if _, err := signupUnverifiedUser(r.Context(), cfg, req, userID); err != nil {
+			lib.WriteError(w, http.StatusInternalServerError, "Failed to signup User")
+			return
+		}
+		lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Verification email sent"})
 		return
 	}
 
-	userId := uuid.New()
-	err = cfg.DB.CreateUserWithEmailPassword(r.Context(), database.CreateUserWithEmailPasswordParams{
-		ID:       userId,
+	// check user already exists in database 
+	exists, err = cfg.DB.CheckUserExists(r.Context(), req.Email)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to signup User")
+		return
+	}
+	if exists {
+		lib.WriteJSON(w, http.StatusBadRequest, "User already exists")
+		return
+	}
+	if _, err := signupNewUser(r.Context(), cfg, req); err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to signup User")
+		return
+	}
+
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Verification email sent"})
+}
+
+func signupNewUser(ctx context.Context, cfg *config.Config, req SignupRequest) (uuid.UUID, error) {
+	HashedPassword, err := HashPassword(req.Password)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	queries, tx, err := cfg.NewTx(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	defer tx.Rollback()
+	userID, err := queries.CreateUser(ctx, database.CreateUserParams{
 		Email:    req.Email,
-		Password: sql.NullString{String: HashedPassword, Valid: true},
 		Name:     req.Name,
+		Verified: false,
 	})
 	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to create user")
-		return
+		tx.Rollback()
+		return uuid.Nil, err
 	}
 
+	err = queries.CreateEmailOauth(ctx, database.CreateEmailOauthParams{
+		UserID:   userID,
+		Password: sql.NullString{String: HashedPassword, Valid: true},
+	})
+	if err != nil {
+		tx.Rollback()
+		return uuid.Nil, err
+	}
+
+	go sendVerficationEmail(cfg, userID, req.Email)
+
+	return userID, nil
+}
+
+func signupUnverifiedUser(ctx context.Context, cfg *config.Config, req SignupRequest, userID uuid.UUID) (uuid.UUID, error) {
+	HashedPassword, err := HashPassword(req.Password)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	queries, tx, err := cfg.NewTx(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	defer tx.Rollback()
+	err = queries.UpdateOauthPassword(ctx, database.UpdateOauthPasswordParams{
+		UserID:   userID,
+		Password: sql.NullString{String: HashedPassword, Valid: true},
+	})
+	if err != nil {
+		tx.Rollback()
+		return uuid.Nil, err
+	}
+	go sendVerficationEmail(cfg, userID, req.Email)
+	return userID, nil
+}
+
+func isUserUnverified(ctx context.Context, cfg *config.Config, req SignupRequest) (bool, uuid.UUID, error) {
+	user, err := cfg.DB.GetUnverifiedUserByEmail(ctx, req.Email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, uuid.Nil, nil
+		}
+		return false, uuid.Nil, err
+	}
+	return true, user.ID, nil
+}
+
+func sendVerficationEmail(cfg *config.Config, userID uuid.UUID, userEmail string) {
 	verificationCode := GenerateVerificationCode()
-	err = cfg.DB.CreateVerificationLink(r.Context(), database.CreateVerificationLinkParams{
-		UserID:    userId,
+	err := cfg.DB.CreateVerificationLink(context.Background(), database.CreateVerificationLinkParams{
+		UserID:    userID,
 		Code:      verificationCode,
 		ExpiresAt: time.Now().Add(15 * time.Minute),
 	})
 	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to create verification link")
 		return
 	}
-	// send verification email
 	verificationLink := fmt.Sprintf("%s/auth/verify/%s", cfg.FrontendUrl, verificationCode)
-
-	go func(){
-		tmpl, err := email.CreateTemplate(email.EmailData{
-			AppName:          cfg.AppName,
-			VerificationLink: verificationLink,
-			RecipientName:    req.Email,
-			ExpiryMinutes:    15,
-			Year:             time.Now().Year(),
-		})
-		if err != nil {
-			fmt.Println("Failed to create verification email:", err)
-			return
-		}
-		fmt.Println("template created")
-		err = email.SendEmail(cfg, req.Email, tmpl)
-		if err != nil {
-			fmt.Println("Failed to send verification email:", err)
-			return
-		}
-		fmt.Println("email sent")
-	}()
-	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Verification email sent"})
+	tmpl, err := email.CreateTemplate(email.EmailData{
+		AppName:          cfg.AppName,
+		VerificationLink: verificationLink,
+		RecipientName:    userEmail,
+		ExpiryMinutes:    15,
+		Year:             time.Now().Year(),
+	})
+	if err != nil {
+		fmt.Println("Failed to create verification email:", err)
+		return
+	}
+	fmt.Println("template created")
+	err = email.SendEmail(cfg, userEmail, tmpl)
+	if err != nil {
+		fmt.Println("Failed to send verification email:", err)
+		return
+	}
+	fmt.Println("email sent")
 }

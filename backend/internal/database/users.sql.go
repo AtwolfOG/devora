@@ -7,51 +7,38 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
 )
 
-const createUserWithEmailPassword = `-- name: CreateUserWithEmailPassword :exec
-INSERT INTO users (id, email, password, name, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW())
+const checkUserExists = `-- name: CheckUserExists :one
+SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
 `
 
-type CreateUserWithEmailPasswordParams struct {
-	ID       uuid.UUID
+func (q *Queries) CheckUserExists(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkUserExists, email)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (email, name, verified) VALUES ($1, $2, $3)
+ON CONFLICT (email) DO NOTHING
+RETURNING id
+`
+
+type CreateUserParams struct {
 	Email    string
-	Password sql.NullString
 	Name     string
+	Verified bool
 }
 
-func (q *Queries) CreateUserWithEmailPassword(ctx context.Context, arg CreateUserWithEmailPasswordParams) error {
-	_, err := q.db.ExecContext(ctx, createUserWithEmailPassword,
-		arg.ID,
-		arg.Email,
-		arg.Password,
-		arg.Name,
-	)
-	return err
-}
-
-const createUserWithGithub = `-- name: CreateUserWithGithub :exec
-INSERT INTO users (id, name, email, profile_picture_url, auth, created_at, updated_at) VALUES ($1, $2, $3, $4, 'github', NOW(), NOW())
-`
-
-type CreateUserWithGithubParams struct {
-	ID                uuid.UUID
-	Name              string
-	Email             string
-	ProfilePictureUrl string
-}
-
-func (q *Queries) CreateUserWithGithub(ctx context.Context, arg CreateUserWithGithubParams) error {
-	_, err := q.db.ExecContext(ctx, createUserWithGithub,
-		arg.ID,
-		arg.Name,
-		arg.Email,
-		arg.ProfilePictureUrl,
-	)
-	return err
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.Name, arg.Verified)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteUser = `-- name: DeleteUser :exec
@@ -63,19 +50,27 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const getPendingStatus = `-- name: GetPendingStatus :one
-SELECT pending FROM users WHERE id = $1
+const getUnverifiedUserByEmail = `-- name: GetUnverifiedUserByEmail :one
+SELECT id, email, name, created_at, updated_at, profile_picture_url, verified FROM users WHERE email = $1 AND verified = FALSE
 `
 
-func (q *Queries) GetPendingStatus(ctx context.Context, id uuid.UUID) (sql.NullBool, error) {
-	row := q.db.QueryRowContext(ctx, getPendingStatus, id)
-	var pending sql.NullBool
-	err := row.Scan(&pending)
-	return pending, err
+func (q *Queries) GetUnverifiedUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUnverifiedUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ProfilePictureUrl,
+		&i.Verified,
+	)
+	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, created_at, updated_at, password, pending, profile_picture_url, auth FROM users WHERE email = $1
+SELECT id, email, name, created_at, updated_at, profile_picture_url, verified FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -87,16 +82,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Password,
-		&i.Pending,
 		&i.ProfilePictureUrl,
-		&i.Auth,
+		&i.Verified,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, email, name, created_at, updated_at, password, pending, profile_picture_url, auth FROM users WHERE id = $1
+SELECT id, email, name, created_at, updated_at, profile_picture_url, verified FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
@@ -108,16 +101,14 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Password,
-		&i.Pending,
 		&i.ProfilePictureUrl,
-		&i.Auth,
+		&i.Verified,
 	)
 	return i, err
 }
 
 const getUsersByEmail = `-- name: GetUsersByEmail :many
-SELECT id, email, name, created_at, updated_at, password, pending, profile_picture_url, auth FROM users WHERE email = $1
+SELECT id, email, name, created_at, updated_at, profile_picture_url, verified FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUsersByEmail(ctx context.Context, email string) ([]User, error) {
@@ -135,10 +126,8 @@ func (q *Queries) GetUsersByEmail(ctx context.Context, email string) ([]User, er
 			&i.Name,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Password,
-			&i.Pending,
 			&i.ProfilePictureUrl,
-			&i.Auth,
+			&i.Verified,
 		); err != nil {
 			return nil, err
 		}
@@ -153,16 +142,11 @@ func (q *Queries) GetUsersByEmail(ctx context.Context, email string) ([]User, er
 	return items, nil
 }
 
-const setPendingStatus = `-- name: SetPendingStatus :exec
-UPDATE users SET pending = $1 WHERE id = $2
+const verifyUser = `-- name: VerifyUser :exec
+UPDATE users SET verified = TRUE WHERE id = $1
 `
 
-type SetPendingStatusParams struct {
-	Pending sql.NullBool
-	ID      uuid.UUID
-}
-
-func (q *Queries) SetPendingStatus(ctx context.Context, arg SetPendingStatusParams) error {
-	_, err := q.db.ExecContext(ctx, setPendingStatus, arg.Pending, arg.ID)
+func (q *Queries) VerifyUser(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, verifyUser, id)
 	return err
 }

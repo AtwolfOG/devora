@@ -47,12 +47,17 @@ func (q *Queries) DeleteVerificationLinksByUserId(ctx context.Context, userID uu
 }
 
 const getVerificationLink = `-- name: GetVerificationLink :one
-SELECT user_id, code, expires_at FROM verification_links WHERE code = $1
+SELECT user_id, code, expires_at, created_at FROM verification_links WHERE code = $1
 `
 
 func (q *Queries) GetVerificationLink(ctx context.Context, code string) (VerificationLink, error) {
 	row := q.db.QueryRowContext(ctx, getVerificationLink, code)
 	var i VerificationLink
-	err := row.Scan(&i.UserID, &i.Code, &i.ExpiresAt)
+	err := row.Scan(
+		&i.UserID,
+		&i.Code,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+	)
 	return i, err
 }

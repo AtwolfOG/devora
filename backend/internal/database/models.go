@@ -13,49 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type AuthType string
-
-const (
-	AuthTypeEmail  AuthType = "email"
-	AuthTypeGithub AuthType = "github"
-	AuthTypeNone   AuthType = "none"
-)
-
-func (e *AuthType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = AuthType(s)
-	case string:
-		*e = AuthType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for AuthType: %T", src)
-	}
-	return nil
-}
-
-type NullAuthType struct {
-	AuthType AuthType
-	Valid    bool // Valid is true if AuthType is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullAuthType) Scan(value interface{}) error {
-	if value == nil {
-		ns.AuthType, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.AuthType.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullAuthType) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.AuthType), nil
-}
-
 type Language string
 
 const (
@@ -99,12 +56,55 @@ func (ns NullLanguage) Value() (driver.Value, error) {
 	return string(ns.Language), nil
 }
 
+type OauthProvider string
+
+const (
+	OauthProviderGithub OauthProvider = "github"
+	OauthProviderGoogle OauthProvider = "google"
+	OauthProviderEmail  OauthProvider = "email"
+)
+
+func (e *OauthProvider) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OauthProvider(s)
+	case string:
+		*e = OauthProvider(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OauthProvider: %T", src)
+	}
+	return nil
+}
+
+type NullOauthProvider struct {
+	OauthProvider OauthProvider
+	Valid         bool // Valid is true if OauthProvider is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOauthProvider) Scan(value interface{}) error {
+	if value == nil {
+		ns.OauthProvider, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OauthProvider.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOauthProvider) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OauthProvider), nil
+}
+
 type Answer struct {
 	QuestionID int32
 	RoomID     uuid.UUID
 	Answer     string
-	CreatedAt  sql.NullTime
-	UpdatedAt  sql.NullTime
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type CodeSnippet struct {
@@ -113,23 +113,27 @@ type CodeSnippet struct {
 	RoomID     uuid.UUID
 	Code       string
 	Language   Language
-	CreatedAt  sql.NullTime
-	UpdatedAt  sql.NullTime
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
-type GithubOauth struct {
-	GithubID  int32
-	UserID    uuid.UUID
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+type Oauth struct {
+	ID         uuid.UUID
+	UserID     uuid.UUID
+	Provider   OauthProvider
+	ProviderID sql.NullString
+	Email      string
+	Password   sql.NullString
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type Question struct {
 	ID          int32
 	RoomID      uuid.UUID
 	Done        bool
-	CreatedAt   sql.NullTime
-	UpdatedAt   sql.NullTime
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	Title       string
 	Description string
 	IsCode      bool
@@ -148,8 +152,8 @@ type Room struct {
 	OwnerID       uuid.UUID
 	StartTime     time.Time
 	IsActive      bool
-	CreatedAt     sql.NullTime
-	UpdatedAt     sql.NullTime
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 	ParticipantID uuid.NullUUID
 }
 
@@ -159,14 +163,13 @@ type User struct {
 	Name              string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
-	Password          sql.NullString
-	Pending           sql.NullBool
 	ProfilePictureUrl string
-	Auth              AuthType
+	Verified          bool
 }
 
 type VerificationLink struct {
 	UserID    uuid.UUID
 	Code      string
 	ExpiresAt time.Time
+	CreatedAt time.Time
 }

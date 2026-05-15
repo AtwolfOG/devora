@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/AtwolfOG/devora/internal/config"
+	"github.com/AtwolfOG/devora/internal/database"
 	"github.com/AtwolfOG/devora/lib"
 )
 
@@ -42,16 +43,27 @@ func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *conf
 		return
 	}
 
-	if !VerifyPassword(req.Password, user.Password.String) {
+	// check if the user is verified, if not ask to verify
+	if !user.Verified {
+		lib.WriteError(w, http.StatusUnauthorized, "User not verified, please verify your email")
+		return
+	}
+
+	userOAuth, err := cfg.DB.GetOauthByUserIdAndProvider(r.Context(), database.GetOauthByUserIdAndProviderParams{
+		UserID:   user.ID,
+		Provider: "email",
+	})
+	if err != nil {
+		lib.WriteError(w, http.StatusUnauthorized, "User not found")
+		return
+	}
+
+	if !VerifyPassword(req.Password, userOAuth.Password.String) {
 		lib.WriteError(w, http.StatusUnauthorized, "Invalid password")
 		return
 	}
 
-	if user.Pending.Bool {
-		lib.WriteError(w, http.StatusUnauthorized, "User not verified")
-		return
-	}
-
+	
 	// this is to send the refresh and access token to the client
 	SendRefreshAndAccessToken(w, r, cfg, user.ID)
 }

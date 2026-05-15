@@ -7,7 +7,6 @@ ALTER TABLE users ADD COLUMN auth auth_type NOT NULL DEFAULT 'none';
 
 -- +goose Down
 ALTER TABLE users DROP COLUMN pending;
-ALTER TABLE users DROP constraint not_null_name;
 ALTER TABLE users DROP COLUMN profile_picture_url;
 ALTER TABLE users DROP COLUMN auth;
 DROP TYPE auth_type;

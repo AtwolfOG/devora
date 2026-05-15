@@ -27,10 +27,18 @@ func configWrapper(config *config.Config, handler func(w http.ResponseWriter, r 
 func main() {
 	config := config.LoadConfig()
 	r := chi.NewRouter()
-	db, err := sql.Open("postgres", config.DatabaseURL)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Create database connection with proper configuration
+    db, err := sql.Open("postgres", config.DatabaseURL)
+    if err != nil {
+        log.Fatal("Error opening database connection:", err)
+    }
+    
+    // Set connection pool parameters for better performance
+    db.SetMaxOpenConns(25)
+    db.SetMaxIdleConns(25)
+    db.SetConnMaxLifetime(5 * time.Minute)
+
+	config.Database = db
 	dbQueries := database.New(db)
 	config.DB = dbQueries
 
@@ -61,6 +69,7 @@ func main() {
 	authRouter.Post("/signup", configWrapper(config, auth.SignupWithEmailAndPassword))
 	authRouter.Post("/login", configWrapper(config, auth.LoginWithEmailAndPassword))
 	authRouter.Get("/github/callback", configWrapper(config, auth.LoginWithGithub))
+	authRouter.Get("/google/callback", configWrapper(config, auth.LoginWithGoogle))
 	authRouter.Get("/verify/{code}", configWrapper(config, auth.VerifyEmail))
 	authRouter.Get("/refresh", configWrapper(config, auth.RefreshToken))
 	r.Mount("/auth", authRouter)

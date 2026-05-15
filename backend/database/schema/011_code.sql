@@ -6,8 +6,8 @@ CREATE TABLE code_snippets (
     room_id UUID NOT NULL,
     code TEXT NOT NULL,
     language language NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (question_id, room_id) REFERENCES questions(id, room_id) ON DELETE CASCADE,
     CONSTRAINT code_snippets_pkey PRIMARY KEY (name, question_id, room_id)
 );
