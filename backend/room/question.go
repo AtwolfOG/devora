@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
@@ -12,18 +13,17 @@ import (
 	"github.com/google/uuid"
 )
 
-type question struct {
+type CreateQuestionRequest struct {
+	RoomID      string `json:"room_id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	IsCode      bool   `json:"is_code"`
-}
-type CreateQuestionsRequest struct {
-	RoomID    string     `json:"room_id"`
-	Questions []question `json:"questions"`
+	Code        string `json:"code"`
+	Language    string `json:"language"`
 }
 
-func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
-	var req CreateQuestionsRequest
+func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	var req CreateQuestionRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		lib.WriteError(w, http.StatusBadRequest, err.Error())
@@ -57,19 +57,61 @@ func CreateQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		lib.WriteError(w, http.StatusBadRequest, "Room is not active")
 		return
 	}
-	for _, question := range req.Questions {
-		err = cfg.DB.CreateQuestion(r.Context(), database.CreateQuestionParams{
-			RoomID:      roomUUID,
-			Title:       question.Title,
-			Description: question.Description,
-			IsCode:      question.IsCode,
+	// validate question
+	if req.Title == "" || req.Description == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
+		return
+	}
+	queries, tx, err := cfg.NewTx(r.Context())
+	defer tx.Rollback()
+	questionID, err := queries.CreateQuestion(r.Context(), database.CreateQuestionParams{
+		RoomID:      roomUUID,
+		Title:       req.Title,
+		Description: req.Description,
+		IsCode:      req.IsCode,
+	})
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create question")
+		return
+	}
+	// 
+	if req.IsCode {
+		if req.Language == "" {
+			lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
+			return
+		}
+		var lang database.Language
+		var extension string
+		switch strings.ToLower(req.Language) {
+		case "go":
+			extension = ".go"
+			lang = database.LanguageGo
+		case "python":
+			extension = ".py"
+			lang = database.LanguagePython
+		case "javascript":
+			extension = ".js"
+			lang = database.LanguageJavascript
+		default:
+			lib.WriteError(w, http.StatusBadRequest, "Invalid language")
+			return
+		}
+		err = queries.CreateCode(r.Context(), database.CreateCodeParams{
+			Name:       "main" + extension,
+			QuestionID: questionID,
+			Code:       req.Code,
+			Language:   lang,
 		})
 		if err != nil {
-			lib.WriteError(w, http.StatusInternalServerError, "Failed to create question")
+			lib.WriteError(w, http.StatusInternalServerError, "Failed to create question code")
 			return
 		}
 	}
-	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Questions created successfully"})
+	if err = tx.Commit(); err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to create question")
+		return
+	}
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Question created successfully"})
 }
 
 func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {

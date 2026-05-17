@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
-const createQuestion = `-- name: CreateQuestion :exec
-INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3, $4)
+const createQuestion = `-- name: CreateQuestion :one
+INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3, $4) RETURNING id
 `
 
 type CreateQuestionParams struct {
@@ -22,14 +22,16 @@ type CreateQuestionParams struct {
 	IsCode      bool
 }
 
-func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) error {
-	_, err := q.db.ExecContext(ctx, createQuestion,
+func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, createQuestion,
 		arg.RoomID,
 		arg.Title,
 		arg.Description,
 		arg.IsCode,
 	)
-	return err
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const deleteQuestion = `-- name: DeleteQuestion :exec
@@ -47,7 +49,7 @@ func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) 
 }
 
 const getQuestionByID = `-- name: GetQuestionByID :one
-SELECT id, room_id, done, created_at, updated_at, title, description, is_code FROM questions WHERE id = $1 AND room_id = $2
+SELECT id, room_id, done, passed, created_at, updated_at, title, description, is_code FROM questions WHERE id = $1 AND room_id = $2
 `
 
 type GetQuestionByIDParams struct {
@@ -62,6 +64,7 @@ func (q *Queries) GetQuestionByID(ctx context.Context, arg GetQuestionByIDParams
 		&i.ID,
 		&i.RoomID,
 		&i.Done,
+		&i.Passed,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Title,
@@ -72,7 +75,7 @@ func (q *Queries) GetQuestionByID(ctx context.Context, arg GetQuestionByIDParams
 }
 
 const getQuestionsByRoomID = `-- name: GetQuestionsByRoomID :many
-SELECT id, room_id, done, created_at, updated_at, title, description, is_code FROM questions WHERE room_id = $1
+SELECT id, room_id, done, passed, created_at, updated_at, title, description, is_code FROM questions WHERE room_id = $1
 `
 
 func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([]Question, error) {
@@ -88,6 +91,7 @@ func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([
 			&i.ID,
 			&i.RoomID,
 			&i.Done,
+			&i.Passed,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Title,
@@ -108,7 +112,7 @@ func (q *Queries) GetQuestionsByRoomID(ctx context.Context, roomID uuid.UUID) ([
 }
 
 const listQuestions = `-- name: ListQuestions :many
-SELECT id, room_id, done, created_at, updated_at, title, description, is_code FROM questions WHERE room_id = $1
+SELECT id, room_id, done, passed, created_at, updated_at, title, description, is_code FROM questions WHERE room_id = $1
 `
 
 func (q *Queries) ListQuestions(ctx context.Context, roomID uuid.UUID) ([]Question, error) {
@@ -124,6 +128,7 @@ func (q *Queries) ListQuestions(ctx context.Context, roomID uuid.UUID) ([]Questi
 			&i.ID,
 			&i.RoomID,
 			&i.Done,
+			&i.Passed,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Title,

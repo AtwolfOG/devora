@@ -9,10 +9,9 @@ import (
 	"context"
 )
 
-const createCode = `-- name: CreateCode :one
+const createCode = `-- name: CreateCode :exec
 INSERT INTO code_snippets (name, question_id, code, language)
 VALUES ($1, $2, $3, $4)
-RETURNING name, question_id, room_id, code, language, created_at, updated_at
 `
 
 type CreateCodeParams struct {
@@ -22,24 +21,14 @@ type CreateCodeParams struct {
 	Language   Language
 }
 
-func (q *Queries) CreateCode(ctx context.Context, arg CreateCodeParams) (CodeSnippet, error) {
-	row := q.db.QueryRowContext(ctx, createCode,
+func (q *Queries) CreateCode(ctx context.Context, arg CreateCodeParams) error {
+	_, err := q.db.ExecContext(ctx, createCode,
 		arg.Name,
 		arg.QuestionID,
 		arg.Code,
 		arg.Language,
 	)
-	var i CodeSnippet
-	err := row.Scan(
-		&i.Name,
-		&i.QuestionID,
-		&i.RoomID,
-		&i.Code,
-		&i.Language,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	return err
 }
 
 const deleteCode = `-- name: DeleteCode :exec

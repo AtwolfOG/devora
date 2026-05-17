@@ -1,7 +1,6 @@
--- name: CreateCode :one
+-- name: CreateCode :exec
 INSERT INTO code_snippets (name, question_id, code, language)
-VALUES ($1, $2, $3, $4)
-RETURNING *;
+VALUES ($1, $2, $3, $4);
 
 -- name: GetCode :one
 SELECT * FROM code_snippets WHERE name = $1 AND question_id = $2;

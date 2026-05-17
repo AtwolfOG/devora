@@ -1,5 +1,5 @@
--- name: CreateQuestion :exec
-INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3, $4);
+-- name: CreateQuestion :one
+INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3, $4) RETURNING id;
 
 -- name: GetQuestionByID :one
 SELECT * FROM questions WHERE id = $1 AND room_id = $2;

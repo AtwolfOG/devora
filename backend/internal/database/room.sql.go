@@ -13,12 +13,12 @@ import (
 )
 
 const createRoom = `-- name: CreateRoom :exec
-INSERT INTO room (id, name, description, owner_id, start_time) VALUES ($1, $2, $3, $4, $5)
+INSERT INTO room (role, company, description, owner_id, start_time) VALUES ($1, $2, $3, $4, $5)
 `
 
 type CreateRoomParams struct {
-	ID          uuid.UUID
-	Name        string
+	Role        string
+	Company     string
 	Description string
 	OwnerID     uuid.UUID
 	StartTime   time.Time
@@ -26,8 +26,8 @@ type CreateRoomParams struct {
 
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
 	_, err := q.db.ExecContext(ctx, createRoom,
-		arg.ID,
-		arg.Name,
+		arg.Role,
+		arg.Company,
 		arg.Description,
 		arg.OwnerID,
 		arg.StartTime,
@@ -45,7 +45,7 @@ func (q *Queries) DeleteRoom(ctx context.Context, id uuid.UUID) error {
 }
 
 const getRoomByID = `-- name: GetRoomByID :one
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room WHERE id = $1
+SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room WHERE id = $1
 `
 
 func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
@@ -53,7 +53,6 @@ func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
 	var i Room
 	err := row.Scan(
 		&i.ID,
-		&i.Name,
 		&i.Description,
 		&i.OwnerID,
 		&i.StartTime,
@@ -61,33 +60,14 @@ func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ParticipantID,
-	)
-	return i, err
-}
-
-const getRoomByName = `-- name: GetRoomByName :one
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room WHERE name = $1
-`
-
-func (q *Queries) GetRoomByName(ctx context.Context, name string) (Room, error) {
-	row := q.db.QueryRowContext(ctx, getRoomByName, name)
-	var i Room
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.OwnerID,
-		&i.StartTime,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ParticipantID,
+		&i.Role,
+		&i.Company,
 	)
 	return i, err
 }
 
 const getRoomsByOwnerID = `-- name: GetRoomsByOwnerID :many
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room WHERE owner_id = $1
+SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room WHERE owner_id = $1
 `
 
 func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
@@ -101,7 +81,6 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 		var i Room
 		if err := rows.Scan(
 			&i.ID,
-			&i.Name,
 			&i.Description,
 			&i.OwnerID,
 			&i.StartTime,
@@ -109,6 +88,8 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ParticipantID,
+			&i.Role,
+			&i.Company,
 		); err != nil {
 			return nil, err
 		}
@@ -123,8 +104,60 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 	return items, nil
 }
 
+const getRoomsByParticipantID = `-- name: GetRoomsByParticipantID :many
+SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room WHERE participant_id = $1
+`
+
+func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uuid.NullUUID) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByParticipantID, participantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.OwnerID,
+			&i.StartTime,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ParticipantID,
+			&i.Role,
+			&i.Company,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const joinRoom = `-- name: JoinRoom :exec
+UPDATE room SET participant_id = $2 WHERE id = $1
+`
+
+type JoinRoomParams struct {
+	ID            uuid.UUID
+	ParticipantID uuid.NullUUID
+}
+
+func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
+	_, err := q.db.ExecContext(ctx, joinRoom, arg.ID, arg.ParticipantID)
+	return err
+}
+
 const listRooms = `-- name: ListRooms :many
-SELECT id, name, description, owner_id, start_time, is_active, created_at, updated_at, participant_id FROM room
+SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room
 `
 
 func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
@@ -138,7 +171,6 @@ func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
 		var i Room
 		if err := rows.Scan(
 			&i.ID,
-			&i.Name,
 			&i.Description,
 			&i.OwnerID,
 			&i.StartTime,
@@ -146,6 +178,8 @@ func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ParticipantID,
+			&i.Role,
+			&i.Company,
 		); err != nil {
 			return nil, err
 		}
@@ -160,12 +194,27 @@ func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
 	return items, nil
 }
 
+const removeParticipant = `-- name: RemoveParticipant :exec
+UPDATE room SET participant_id = NULL WHERE id = $1 AND participant_id = $2
+`
+
+type RemoveParticipantParams struct {
+	ID            uuid.UUID
+	ParticipantID uuid.NullUUID
+}
+
+func (q *Queries) RemoveParticipant(ctx context.Context, arg RemoveParticipantParams) error {
+	_, err := q.db.ExecContext(ctx, removeParticipant, arg.ID, arg.ParticipantID)
+	return err
+}
+
 const updateRoom = `-- name: UpdateRoom :exec
-UPDATE room SET name = $1, description = $2, start_time = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4
+UPDATE room SET role = $1, company = $2, description = $3, start_time = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5
 `
 
 type UpdateRoomParams struct {
-	Name        string
+	Role        string
+	Company     string
 	Description string
 	StartTime   time.Time
 	ID          uuid.UUID
@@ -173,7 +222,8 @@ type UpdateRoomParams struct {
 
 func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {
 	_, err := q.db.ExecContext(ctx, updateRoom,
-		arg.Name,
+		arg.Role,
+		arg.Company,
 		arg.Description,
 		arg.StartTime,
 		arg.ID,

@@ -132,6 +132,7 @@ type Question struct {
 	ID          int32
 	RoomID      uuid.UUID
 	Done        bool
+	Passed      sql.NullBool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Title       string
@@ -147,7 +148,6 @@ type RefreshToken struct {
 
 type Room struct {
 	ID            uuid.UUID
-	Name          string
 	Description   string
 	OwnerID       uuid.UUID
 	StartTime     time.Time
@@ -155,6 +155,8 @@ type Room struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	ParticipantID uuid.NullUUID
+	Role          string
+	Company       string
 }
 
 type User struct {
