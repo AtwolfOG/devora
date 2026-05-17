@@ -99,6 +99,51 @@ func (ns NullOauthProvider) Value() (driver.Value, error) {
 	return string(ns.OauthProvider), nil
 }
 
+type RoomStatus string
+
+const (
+	RoomStatusPending   RoomStatus = "pending"
+	RoomStatusLive      RoomStatus = "live"
+	RoomStatusReviewing RoomStatus = "reviewing"
+	RoomStatusCompleted RoomStatus = "completed"
+	RoomStatusCancelled RoomStatus = "cancelled"
+)
+
+func (e *RoomStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RoomStatus(s)
+	case string:
+		*e = RoomStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RoomStatus: %T", src)
+	}
+	return nil
+}
+
+type NullRoomStatus struct {
+	RoomStatus RoomStatus
+	Valid      bool // Valid is true if RoomStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRoomStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.RoomStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RoomStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRoomStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.RoomStatus), nil
+}
+
 type Answer struct {
 	QuestionID int32
 	RoomID     uuid.UUID
@@ -151,12 +196,14 @@ type Room struct {
 	Description   string
 	OwnerID       uuid.UUID
 	StartTime     time.Time
-	IsActive      bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	ParticipantID uuid.NullUUID
 	Role          string
 	Company       string
+	StartedAt     sql.NullTime
+	EndedAt       sql.NullTime
+	Status        RoomStatus
 }
 
 type User struct {

@@ -1,37 +1,162 @@
 package room
 
-// import (
-// 	"net/http"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
 
-// 	"github.com/AtwolfOG/devora/internal/config"
-// 	"github.com/gorilla/websocket"
-// )
+	"github.com/AtwolfOG/devora/internal/auth"
+	"github.com/AtwolfOG/devora/internal/config"
+	"github.com/AtwolfOG/devora/internal/database"
+	"github.com/AtwolfOG/devora/lib"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
+)
 
-// type room struct {
-// 	id string
-// 	users map[string]*websocket.Conn
-// }
-// type message struct {
-// 	Type string `json:"type"`
+type user_t struct {
+	id uuid.UUID
+	conn *websocket.Conn
+	
+}
+type room_t struct {
+	id uuid.UUID
+	owner *user_t
+	participant *user_t
 
-// }
+}
 
-// var upgrader = websocket.Upgrader{
-// 	ReadBufferSize:  1024,
-// 	WriteBufferSize: 1024,
-// 	CheckOrigin: func(r *http.Request) bool {
-// 		return true
-// 	},
-// }
+type message_t struct {
+	Type string `json:"type"`
+	Payload any `json:"payload"`
+}
 
-// var rooms = make(map[string]*websocket.Conn)
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		return origin == "http://localhost:3000"
+	},
+}
 
-// func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
-// 	userId := r.URL.Query().Get("userId")
-// 	conn, err := upgrader.Upgrade(w, r, nil)
-// 	if err != nil {
-// 		return
-// 	}
-// 	defer conn.Close()
+var rooms = make(map[string]*room_t)
 
-// }
+func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	userId, err := auth.GetIdFromReqCtx(r)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
+		return
+	}
+	roomId := r.URL.Query().Get("roomId")
+	if roomId == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
+		return
+	}
+	dbRoom, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		return
+	}
+	participantId := dbRoom.ParticipantID
+	if participantId.Valid != true{
+		lib.WriteError(w, http.StatusBadRequest, "No participant in this room")
+		return
+	}
+	if dbRoom.OwnerID != userId && participantId.UUID != userId {
+		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner or participant of this room")
+		return
+	}
+	// check if is owner
+	isOwner := dbRoom.OwnerID == userId
+	room, ok := rooms[roomId]
+	if !ok {
+		room = &room_t{}
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	if isOwner {
+		if room.owner.conn != nil {
+			room.owner.conn.Close()
+		}
+		room.owner = &user_t{
+			id: userId,
+			conn: conn,
+		}
+	} else {
+		if room.participant.conn != nil {
+			room.participant.conn.Close()
+		}
+		room.participant = &user_t{
+			id: userId,
+			conn: conn,
+		}
+	}
+	handleConnection(conn, room, isOwner, cfg.DB)
+
+}
+
+func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *database.Queries) {
+	for {
+		var msg message_t
+		err := conn.ReadJSON(&msg)
+		if err != nil {
+			break
+		}
+		switch msg.Type {
+		case "start":
+			if !isOwner {
+				fmt.Println("Not owner tried to start")
+				continue
+			}
+
+			// start room
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
+			defer cancel()
+			err := db.StartRoom(ctx, database.StartRoomParams{
+				ID:      room.id,
+				OwnerID: room.owner.id,
+			})
+			if err != nil {
+				fmt.Println("Failed to update room")
+				continue
+			}
+
+
+		case "offer":
+			fallthrough
+		case "answer":
+			fallthrough
+		case "candidate":
+			fallthrough
+		case "join":
+			fallthrough
+		case "leave":
+			fallthrough
+		case "edit":
+			writeMessage(msg, room, isOwner)
+		default:
+			fmt.Printf("Unknown message type: %s\n", msg.Type)
+		}
+	}
+	conn.Close()
+}
+
+func writeMessage(msg message_t, room *room_t, isOwner bool) {
+	if isOwner {
+		if room.participant.conn != nil {
+			room.participant.conn.WriteJSON(msg)
+		}
+	} else {
+		if room.owner.conn != nil {
+			room.owner.conn.WriteJSON(msg)
+		}
+	}
+}

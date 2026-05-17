@@ -52,9 +52,9 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner of this room")
 		return
 	}
-	// check if room is active
-	if !room.IsActive {
-		lib.WriteError(w, http.StatusBadRequest, "Room is not active")
+	// check if room status is pending
+	if room.Status != database.RoomStatusPending{
+		lib.WriteError(w, http.StatusBadRequest, "Room is not pending")
 		return
 	}
 	// validate question

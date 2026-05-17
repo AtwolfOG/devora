@@ -119,7 +119,10 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner of this room")
 		return
 	}
-	err = cfg.DB.DeleteRoom(r.Context(), roomUUID)
+	err = cfg.DB.DeleteRoom(r.Context(), database.DeleteRoomParams{
+		ID: roomUUID,
+		OwnerID: userId,
+	})
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to delete room")
 		return
@@ -205,6 +208,7 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 	err = cfg.DB.UpdateRoom(r.Context(), database.UpdateRoomParams{
 		ID:          roomUUID,
+		OwnerID:     userId,
 		Role:        req.Role,
 		Company:     req.Company,
 		Description: req.Description,

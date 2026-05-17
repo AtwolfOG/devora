@@ -12,6 +12,20 @@ import (
 	"github.com/google/uuid"
 )
 
+const cancelRoom = `-- name: CancelRoom :exec
+UPDATE room SET status = 'cancelled', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2
+`
+
+type CancelRoomParams struct {
+	ID      uuid.UUID
+	OwnerID uuid.UUID
+}
+
+func (q *Queries) CancelRoom(ctx context.Context, arg CancelRoomParams) error {
+	_, err := q.db.ExecContext(ctx, cancelRoom, arg.ID, arg.OwnerID)
+	return err
+}
+
 const createRoom = `-- name: CreateRoom :exec
 INSERT INTO room (role, company, description, owner_id, start_time) VALUES ($1, $2, $3, $4, $5)
 `
@@ -36,16 +50,35 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
 }
 
 const deleteRoom = `-- name: DeleteRoom :exec
-DELETE FROM room WHERE id = $1
+DELETE FROM room WHERE id = $1 AND owner_id = $2
 `
 
-func (q *Queries) DeleteRoom(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteRoom, id)
+type DeleteRoomParams struct {
+	ID      uuid.UUID
+	OwnerID uuid.UUID
+}
+
+func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
+	_, err := q.db.ExecContext(ctx, deleteRoom, arg.ID, arg.OwnerID)
+	return err
+}
+
+const endRoom = `-- name: EndRoom :exec
+UPDATE room SET status = 'reviewing', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'live' AND owner_id = $2
+`
+
+type EndRoomParams struct {
+	ID      uuid.UUID
+	OwnerID uuid.UUID
+}
+
+func (q *Queries) EndRoom(ctx context.Context, arg EndRoomParams) error {
+	_, err := q.db.ExecContext(ctx, endRoom, arg.ID, arg.OwnerID)
 	return err
 }
 
 const getRoomByID = `-- name: GetRoomByID :one
-SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room WHERE id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE id = $1
 `
 
 func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
@@ -56,18 +89,20 @@ func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
 		&i.Description,
 		&i.OwnerID,
 		&i.StartTime,
-		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ParticipantID,
 		&i.Role,
 		&i.Company,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.Status,
 	)
 	return i, err
 }
 
 const getRoomsByOwnerID = `-- name: GetRoomsByOwnerID :many
-SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room WHERE owner_id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE owner_id = $1
 `
 
 func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
@@ -84,12 +119,14 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 			&i.Description,
 			&i.OwnerID,
 			&i.StartTime,
-			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.StartedAt,
+			&i.EndedAt,
+			&i.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -105,7 +142,7 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 }
 
 const getRoomsByParticipantID = `-- name: GetRoomsByParticipantID :many
-SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room WHERE participant_id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE participant_id = $1
 `
 
 func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uuid.NullUUID) ([]Room, error) {
@@ -122,12 +159,14 @@ func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uui
 			&i.Description,
 			&i.OwnerID,
 			&i.StartTime,
-			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.StartedAt,
+			&i.EndedAt,
+			&i.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -157,7 +196,7 @@ func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
 }
 
 const listRooms = `-- name: ListRooms :many
-SELECT id, description, owner_id, start_time, is_active, created_at, updated_at, participant_id, role, company FROM room
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room
 `
 
 func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
@@ -174,12 +213,14 @@ func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
 			&i.Description,
 			&i.OwnerID,
 			&i.StartTime,
-			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.StartedAt,
+			&i.EndedAt,
+			&i.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -208,8 +249,22 @@ func (q *Queries) RemoveParticipant(ctx context.Context, arg RemoveParticipantPa
 	return err
 }
 
+const startRoom = `-- name: StartRoom :exec
+UPDATE room SET status = 'live', started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2
+`
+
+type StartRoomParams struct {
+	ID      uuid.UUID
+	OwnerID uuid.UUID
+}
+
+func (q *Queries) StartRoom(ctx context.Context, arg StartRoomParams) error {
+	_, err := q.db.ExecContext(ctx, startRoom, arg.ID, arg.OwnerID)
+	return err
+}
+
 const updateRoom = `-- name: UpdateRoom :exec
-UPDATE room SET role = $1, company = $2, description = $3, start_time = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5
+UPDATE room SET role = $1, company = $2, description = $3, start_time = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 AND owner_id = $6
 `
 
 type UpdateRoomParams struct {
@@ -218,6 +273,7 @@ type UpdateRoomParams struct {
 	Description string
 	StartTime   time.Time
 	ID          uuid.UUID
+	OwnerID     uuid.UUID
 }
 
 func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {
@@ -227,6 +283,7 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {
 		arg.Description,
 		arg.StartTime,
 		arg.ID,
+		arg.OwnerID,
 	)
 	return err
 }
