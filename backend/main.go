@@ -28,30 +28,30 @@ func main() {
 	config := config.LoadConfig()
 	r := chi.NewRouter()
 	// Create database connection with proper configuration
-    db, err := sql.Open("postgres", config.DatabaseURL)
-    if err != nil {
-        log.Fatal("Error opening database connection:", err)
-    }
-    
-    // Set connection pool parameters for better performance
-    db.SetMaxOpenConns(25)
-    db.SetMaxIdleConns(25)
-    db.SetConnMaxLifetime(5 * time.Minute)
+	db, err := sql.Open("postgres", config.DatabaseURL)
+	if err != nil {
+		log.Fatal("Error opening database connection:", err)
+	}
+
+	// Set connection pool parameters for better performance
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	config.Database = db
 	dbQueries := database.New(db)
 	config.DB = dbQueries
 
 	r.Use(cors.Handler(cors.Options{
-    AllowedOrigins:   []string{config.FrontendUrl},
-    AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-    AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-    ExposedHeaders:   []string{"Link"},
-    AllowCredentials: true,
-    MaxAge:           300, 
-  }))
+		AllowedOrigins:   []string{config.FrontendUrl},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 	r.Use(middleware.Logger)
-  
+
 	authRouter := chi.NewRouter()
 	// this is for testing purposes
 	authRouter.Use(func(next http.Handler) http.Handler {
@@ -69,7 +69,9 @@ func main() {
 	authRouter.Post("/signup", configWrapper(config, auth.SignupWithEmailAndPassword))
 	authRouter.Post("/login", configWrapper(config, auth.LoginWithEmailAndPassword))
 	authRouter.Get("/github/callback", configWrapper(config, auth.LoginWithGithub))
+	authRouter.Get("/github/link", configWrapper(config, auth.SendGithubLink))
 	authRouter.Get("/google/callback", configWrapper(config, auth.LoginWithGoogle))
+	authRouter.Get("/google/link", configWrapper(config, auth.SendGoogleLink))
 	authRouter.Get("/verify/{code}", configWrapper(config, auth.VerifyEmail))
 	authRouter.Get("/refresh", configWrapper(config, auth.RefreshToken))
 	r.Mount("/auth", authRouter)
