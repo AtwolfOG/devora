@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
@@ -17,18 +18,18 @@ import (
 
 // user response from github api
 type githubUserResponse struct {
-	ID        float64  `json:"id"`
-	Login     string `json:"login"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	AvatarUrl string `json:"avatar_url"`
+	ID        float64 `json:"id"`
+	Login     string  `json:"login"`
+	Name      string  `json:"name"`
+	Email     string  `json:"email"`
+	AvatarUrl string  `json:"avatar_url"`
 }
 
 // email response from github api
 type githubEmailResponse struct {
-	Email string `json:"email"`
-	Primary bool `json:"primary"`
-	Verified bool `json:"verified"`
+	Email      string `json:"email"`
+	Primary    bool   `json:"primary"`
+	Verified   bool   `json:"verified"`
 	Visibility string `json:"visibility"`
 }
 
@@ -87,11 +88,34 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		lib.WriteError(w, http.StatusBadRequest, "Missing code")
 		return
 	}
+	// this is to verify the oauth state token
+	cookie, err := r.Cookie("oauth_state")
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Missing oauth state")
+		return
+	}
+	claims, err := verifyOAuthStateToken(cookie.Value, cfg.JWTSecret)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		return
+	}
+	if claims.Provider != "github" {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		return
+	}
+	if claims.Token != r.URL.Query().Get("state") {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		return
+	}
 	tokenResponse, err := githubOauthConfig.Exchange(r.Context(), code)
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get access token")
 		return
 	}
+	// remove oauth state cookie
+	cookie.MaxAge = -1
+	http.SetCookie(w, cookie)
+	// get the user profile from github
 	githubClient := githubOauthConfig.Client(r.Context(), tokenResponse)
 	userResponse, err := getGithubUser(githubClient)
 	if err != nil {
@@ -103,11 +127,11 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		Provider: "github",
 		ProviderID: sql.NullString{
 			String: strconv.FormatInt(int64(userResponse.ID), 10),
-			Valid: true,
+			Valid:  true,
 		},
 	})
 	// if no user is found with the given provider id and provider, create a new user
-	if err == sql.ErrNoRows{
+	if err == sql.ErrNoRows {
 		signupNewUserWithGithub(w, r, cfg, userResponse)
 		return
 	}
@@ -120,9 +144,7 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	SendRefreshAndAccessToken(w, r, cfg, row.Userid)
 }
 
-
-
-func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config, userResponse *githubUserResponse){
+func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config, userResponse *githubUserResponse) {
 	// check if the user already exists by email
 	user, err := cfg.DB.GetUserByEmail(r.Context(), userResponse.Email)
 	if err == sql.ErrNoRows {
@@ -143,12 +165,12 @@ func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config
 			lib.WriteError(w, http.StatusInternalServerError, "Failed to signup User")
 			return
 		}
-		
+
 		err = queries.CreateGithubOauth(r.Context(), database.CreateGithubOauthParams{
 			UserID: userID,
 			ProviderID: sql.NullString{
 				String: strconv.FormatInt(int64(userResponse.ID), 10),
-				Valid: true,
+				Valid:  true,
 			},
 			Email: userResponse.Email,
 		})
@@ -174,11 +196,10 @@ func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config
 	}
 	defer tx.Rollback()
 
-
 	// if the user is not verified, then delete the email and password oauth and verify the github oauth
 	if user.Verified == false {
 		err = queries.DeleteOauthByUserIdAndProvider(r.Context(), database.DeleteOauthByUserIdAndProviderParams{
-			UserID: user.ID,
+			UserID:   user.ID,
 			Provider: "email",
 		})
 		if err != nil {
@@ -192,7 +213,7 @@ func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config
 		UserID: user.ID,
 		ProviderID: sql.NullString{
 			String: strconv.FormatInt(int64(userResponse.ID), 10),
-			Valid: true,
+			Valid:  true,
 		},
 		Email: userResponse.Email,
 	})
@@ -201,7 +222,7 @@ func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to update user")
 		return
 	}
-	
+
 	err = queries.VerifyUser(r.Context(), user.ID)
 	if err != nil {
 		tx.Rollback()
@@ -215,4 +236,35 @@ func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config
 	}
 	// send the refresh and access token to the client through cookies and response body
 	SendRefreshAndAccessToken(w, r, cfg, user.ID)
+}
+
+func SendGithubLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	githubOauthConfig := &oauth2.Config{
+		ClientID:     cfg.GithubClientId,
+		ClientSecret: cfg.GithubClientSecret,
+		RedirectURL:  cfg.FrontendUrl + "/callback/github",
+		Scopes:       []string{"user:email"},
+		Endpoint:     github.Endpoint,
+	}
+
+	tokenString, token, err := generateOAuthStateToken("github", cfg.JWTSecret)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
+	cookie := http.Cookie{
+		Name:     "oauth_state",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   cfg.Environment == "production",
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Now().Add(15 * time.Minute),
+	}
+	http.SetCookie(w, &cookie)
+	url := githubOauthConfig.AuthCodeURL(tokenString)
+
+	lib.WriteJSON(w, http.StatusOK, map[string]string{
+		"url": url,
+	})
 }

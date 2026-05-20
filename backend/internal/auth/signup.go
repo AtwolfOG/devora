@@ -59,7 +59,7 @@ func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *con
 		return
 	}
 
-	// check user already exists in database 
+	// check user already exists in database
 	exists, err = cfg.DB.CheckUserExists(r.Context(), req.Email)
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to signup User")
@@ -145,8 +145,11 @@ func isUserUnverified(ctx context.Context, cfg *config.Config, req SignupRequest
 }
 
 func sendVerficationEmail(cfg *config.Config, userID uuid.UUID, userEmail string) {
-	verificationCode := GenerateVerificationCode()
-	err := cfg.DB.CreateVerificationLink(context.Background(), database.CreateVerificationLinkParams{
+	verificationCode, err := generateRandomString(32)
+	if err != nil {
+		return
+	}
+	err = cfg.DB.CreateVerificationLink(context.Background(), database.CreateVerificationLinkParams{
 		UserID:    userID,
 		Code:      verificationCode,
 		ExpiresAt: time.Now().Add(15 * time.Minute),

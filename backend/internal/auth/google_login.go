@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/internal/database"
@@ -13,14 +14,13 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-
 // user response from github api
 type googleUserResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Verified  bool   `json:"verified_email"`
-	Picture   string `json:"picture"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Verified bool   `json:"verified_email"`
+	Picture  string `json:"picture"`
 }
 
 func getGoogleUser(client *http.Client) (*googleUserResponse, error) {
@@ -56,11 +56,34 @@ func LoginWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		lib.WriteError(w, http.StatusBadRequest, "Missing code")
 		return
 	}
+	// this is to verify the oauth state token
+	cookie, err := r.Cookie("oauth_state")
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Missing oauth state")
+		return
+	}
+	claims, err := verifyOAuthStateToken(cookie.Value, cfg.JWTSecret)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		return
+	}
+	if claims.Provider != "google" {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		return
+	}
+	if claims.Token != r.URL.Query().Get("state") {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		return
+	}
 	tokenResponse, err := googleOauthConfig.Exchange(r.Context(), code)
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get access token")
 		return
 	}
+	// remove oauth state cookie
+	cookie.MaxAge = -1
+	http.SetCookie(w, cookie)
+	// get the user profile from google
 	googleClient := googleOauthConfig.Client(r.Context(), tokenResponse)
 	userResponse, err := getGoogleUser(googleClient)
 	if err != nil {
@@ -72,11 +95,11 @@ func LoginWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		Provider: "google",
 		ProviderID: sql.NullString{
 			String: userResponse.ID,
-			Valid: 	true,
+			Valid:  true,
 		},
 	})
 	// if no user is found with the given provider id and provider, create a new user
-	if err == sql.ErrNoRows{
+	if err == sql.ErrNoRows {
 		signupNewUserWithGoogle(w, r, cfg, userResponse)
 		return
 	}
@@ -89,9 +112,7 @@ func LoginWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	SendRefreshAndAccessToken(w, r, cfg, row.Userid)
 }
 
-
-
-func signupNewUserWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config, userResponse *googleUserResponse){
+func signupNewUserWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config, userResponse *googleUserResponse) {
 	// check if the user already exists by email
 	user, err := cfg.DB.GetUserByEmail(r.Context(), userResponse.Email)
 	if err == sql.ErrNoRows {
@@ -112,12 +133,12 @@ func signupNewUserWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config
 			lib.WriteError(w, http.StatusInternalServerError, "Failed to signup User")
 			return
 		}
-		
+
 		err = queries.CreateGoogleOauth(r.Context(), database.CreateGoogleOauthParams{
 			UserID: userID,
 			ProviderID: sql.NullString{
 				String: userResponse.ID,
-				Valid: true,
+				Valid:  true,
 			},
 			Email: userResponse.Email,
 		})
@@ -143,11 +164,10 @@ func signupNewUserWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config
 	}
 	defer tx.Rollback()
 
-
 	// if the user is not verified, then delete the email and password oauth and verify the github oauth
 	if user.Verified == false {
 		err = queries.DeleteOauthByUserIdAndProvider(r.Context(), database.DeleteOauthByUserIdAndProviderParams{
-			UserID: user.ID,
+			UserID:   user.ID,
 			Provider: "email",
 		})
 		if err != nil {
@@ -158,19 +178,19 @@ func signupNewUserWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config
 	}
 
 	err = queries.CreateGoogleOauth(r.Context(), database.CreateGoogleOauthParams{
-		UserID: 	user.ID,
+		UserID: user.ID,
 		ProviderID: sql.NullString{
-			String: 	userResponse.ID,
-			Valid: 		true,
+			String: userResponse.ID,
+			Valid:  true,
 		},
-		Email: 		userResponse.Email,
+		Email: userResponse.Email,
 	})
 	if err != nil {
 		tx.Rollback()
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to update user")
 		return
 	}
-	
+
 	err = queries.VerifyUser(r.Context(), user.ID)
 	if err != nil {
 		tx.Rollback()
@@ -184,4 +204,35 @@ func signupNewUserWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config
 	}
 	// send the refresh and access token to the client through cookies and response body
 	SendRefreshAndAccessToken(w, r, cfg, user.ID)
+}
+
+func SendGoogleLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	googleOauthConfig := &oauth2.Config{
+		ClientID:     cfg.GoogleClientId,
+		ClientSecret: cfg.GoogleClientSecret,
+		RedirectURL:  cfg.FrontendUrl + "/callback/google",
+		Scopes:       []string{"profile", "email"},
+		Endpoint:     google.Endpoint,
+	}
+
+	tokenString, token, err := generateOAuthStateToken("google", cfg.JWTSecret)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
+	cookie := http.Cookie{
+		Name:     "oauth_state",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   cfg.Environment == "production",
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Now().Add(15 * time.Minute),
+	}
+	http.SetCookie(w, &cookie)
+	url := googleOauthConfig.AuthCodeURL(tokenString)
+
+	lib.WriteJSON(w, http.StatusOK, map[string]string{
+		"url": url,
+	})
 }

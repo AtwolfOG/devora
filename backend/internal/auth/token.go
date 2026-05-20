@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"log"
 	"net/http"
 	"time"
@@ -13,31 +11,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateRefreshToken() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(b), nil
-}
-
-func GenerateVerificationCode() string {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return ""
-	}
-	return base64.URLEncoding.EncodeToString(b)
-}
-
 type SignupResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
 func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *config.Config, userId uuid.UUID) {
 
-	refreshToken, err := GenerateRefreshToken()
+	refreshToken, err := generateRandomString(32)
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to generate refresh token")
 		return
