@@ -15,20 +15,18 @@ import (
 )
 
 type user_t struct {
-	id uuid.UUID
+	id   uuid.UUID
 	conn *websocket.Conn
-	
 }
 type room_t struct {
-	id uuid.UUID
-	owner *user_t
+	id          uuid.UUID
+	owner       *user_t
 	participant *user_t
-
 }
 
 type message_t struct {
-	Type string `json:"type"`
-	Payload any `json:"payload"`
+	Type    string `json:"type"`
+	Payload any    `json:"payload"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -40,7 +38,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var rooms = make(map[string]*room_t)
+var rooms = make(map[uuid.UUID]*room_t)
 
 func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
@@ -64,7 +62,7 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 	participantId := dbRoom.ParticipantID
-	if participantId.Valid != true{
+	if participantId.Valid != true {
 		lib.WriteError(w, http.StatusBadRequest, "No participant in this room")
 		return
 	}
@@ -72,11 +70,19 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner or participant of this room")
 		return
 	}
+	// check if room has ended
+	if dbRoom.EndedAt.Valid || (dbRoom.Status != database.RoomStatusPending && dbRoom.Status != database.RoomStatusLive) {
+		lib.WriteError(w, http.StatusGone, "Room has ended")
+		return
+	}
 	// check if is owner
 	isOwner := dbRoom.OwnerID == userId
-	room, ok := rooms[roomId]
+	room, ok := rooms[roomUUID]
 	if !ok {
-		room = &room_t{}
+		room = &room_t{
+			id: roomUUID,
+		}
+		rooms[roomUUID] = room
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -87,7 +93,7 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			room.owner.conn.Close()
 		}
 		room.owner = &user_t{
-			id: userId,
+			id:   userId,
 			conn: conn,
 		}
 	} else {
@@ -95,7 +101,7 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			room.participant.conn.Close()
 		}
 		room.participant = &user_t{
-			id: userId,
+			id:   userId,
 			conn: conn,
 		}
 	}
@@ -113,12 +119,12 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 		switch msg.Type {
 		case "start":
 			if !isOwner {
-				fmt.Println("Not owner tried to start")
+				fmt.Println("Not owner tried to start call")
 				continue
 			}
 
 			// start room
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 			defer cancel()
 			err := db.StartRoom(ctx, database.StartRoomParams{
 				ID:      room.id,
@@ -128,7 +134,44 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 				fmt.Println("Failed to update room")
 				continue
 			}
+			writeMessage(message_t{
+				Type:    "started",
+				Payload: nil,
+			}, room, isOwner)
+			writeMessage(message_t{
+				Type:    "started",
+				Payload: nil,
+			}, room, !isOwner)
 
+			return
+
+		case "end":
+			if !isOwner {
+				fmt.Println("Not owner tried to end call")
+				continue
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			defer cancel()
+			err := db.EndRoom(ctx, database.EndRoomParams{
+				ID:      room.id,
+				OwnerID: room.owner.id,
+			})
+			if err != nil {
+				fmt.Println("Failed to end room")
+				continue
+			}
+			writeMessage(message_t{
+				Type:    "ended",
+				Payload: nil,
+			}, room, isOwner)
+			writeMessage(message_t{
+				Type:    "ended",
+				Payload: nil,
+			}, room, !isOwner)
+			delete(rooms, room.id)
+			room.owner.conn.Close()
+			room.participant.conn.Close()
+			return
 
 		case "offer":
 			fallthrough
