@@ -141,12 +141,187 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 	return items, nil
 }
 
+const getRoomsByOwnerIDAndStatus = `-- name: GetRoomsByOwnerIDAndStatus :many
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE owner_id = $1 AND status = $2
+`
+
+type GetRoomsByOwnerIDAndStatusParams struct {
+	OwnerID uuid.UUID
+	Status  RoomStatus
+}
+
+func (q *Queries) GetRoomsByOwnerIDAndStatus(ctx context.Context, arg GetRoomsByOwnerIDAndStatusParams) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDAndStatus, arg.OwnerID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.OwnerID,
+			&i.StartTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ParticipantID,
+			&i.Role,
+			&i.Company,
+			&i.StartedAt,
+			&i.EndedAt,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRoomsByOwnerIDOrParticipantID = `-- name: GetRoomsByOwnerIDOrParticipantID :many
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE (owner_id = $1 OR participant_id = $1)
+`
+
+func (q *Queries) GetRoomsByOwnerIDOrParticipantID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDOrParticipantID, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.OwnerID,
+			&i.StartTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ParticipantID,
+			&i.Role,
+			&i.Company,
+			&i.StartedAt,
+			&i.EndedAt,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRoomsByOwnerIDOrParticipantIDAndStatus = `-- name: GetRoomsByOwnerIDOrParticipantIDAndStatus :many
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = $2
+`
+
+type GetRoomsByOwnerIDOrParticipantIDAndStatusParams struct {
+	OwnerID uuid.UUID
+	Status  RoomStatus
+}
+
+func (q *Queries) GetRoomsByOwnerIDOrParticipantIDAndStatus(ctx context.Context, arg GetRoomsByOwnerIDOrParticipantIDAndStatusParams) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDOrParticipantIDAndStatus, arg.OwnerID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.OwnerID,
+			&i.StartTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ParticipantID,
+			&i.Role,
+			&i.Company,
+			&i.StartedAt,
+			&i.EndedAt,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRoomsByParticipantID = `-- name: GetRoomsByParticipantID :many
 SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE participant_id = $1
 `
 
 func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uuid.NullUUID) ([]Room, error) {
 	rows, err := q.db.QueryContext(ctx, getRoomsByParticipantID, participantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.OwnerID,
+			&i.StartTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ParticipantID,
+			&i.Role,
+			&i.Company,
+			&i.StartedAt,
+			&i.EndedAt,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRoomsByParticipantIDAndStatus = `-- name: GetRoomsByParticipantIDAndStatus :many
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE participant_id = $1 AND status = $2
+`
+
+type GetRoomsByParticipantIDAndStatusParams struct {
+	ParticipantID uuid.NullUUID
+	Status        RoomStatus
+}
+
+func (q *Queries) GetRoomsByParticipantIDAndStatus(ctx context.Context, arg GetRoomsByParticipantIDAndStatusParams) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByParticipantIDAndStatus, arg.ParticipantID, arg.Status)
 	if err != nil {
 		return nil, err
 	}

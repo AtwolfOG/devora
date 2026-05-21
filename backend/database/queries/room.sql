@@ -7,6 +7,18 @@ SELECT * FROM room WHERE owner_id = $1;
 -- name: GetRoomsByParticipantID :many
 SELECT * FROM room WHERE participant_id = $1;
 
+-- name: GetRoomsByOwnerIDAndStatus :many
+SELECT * FROM room WHERE owner_id = $1 AND status = $2;
+
+-- name: GetRoomsByParticipantIDAndStatus :many
+SELECT * FROM room WHERE participant_id = $1 AND status = $2;
+
+-- name: GetRoomsByOwnerIDOrParticipantIDAndStatus :many
+SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = $2;
+
+-- name: GetRoomsByOwnerIDOrParticipantID :many
+SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1);
+
 -- name: CreateRoom :exec
 INSERT INTO room (role, company, description, owner_id, start_time) VALUES ($1, $2, $3, $4, $5);
 

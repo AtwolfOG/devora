@@ -74,6 +74,7 @@ func main() {
 	authRouter.Get("/google/link", configWrapper(config, auth.SendGoogleLink))
 	authRouter.Get("/verify/{code}", configWrapper(config, auth.VerifyEmail))
 	authRouter.Get("/refresh", configWrapper(config, auth.RefreshToken))
+	authRouter.Get("/status", configWrapper(config, auth.Status))
 	r.Mount("/auth", authRouter)
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(auth.AuthMiddleware)
