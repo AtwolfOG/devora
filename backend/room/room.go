@@ -85,23 +85,23 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 	queryStatus := r.URL.Query().Get("status")
-	var status database.RoomStatus
-	switch queryStatus {
-	case "pending":
-		status = database.RoomStatusPending
-	case "live":
-		status = database.RoomStatusLive
-	case "reviewing":
-		status = database.RoomStatusReviewing
-	case "completed":
-		status = database.RoomStatusCompleted
-	case "cancelled":
-		status = database.RoomStatusCancelled
-	default:
-		status = ""
+	var status []database.RoomStatus
+	for _, s := range strings.Split(queryStatus, ",") {
+		switch s {
+		case "pending":
+			status = append(status, database.RoomStatusPending)
+		case "live":
+			status = append(status, database.RoomStatusLive)
+		case "reviewing":
+			status = append(status, database.RoomStatusReviewing)
+		case "completed":
+			status = append(status, database.RoomStatusCompleted)
+		case "cancelled":
+			status = append(status, database.RoomStatusCancelled)
+		}
 	}
 	queryType := r.URL.Query().Get("type")
-	if status == "" && queryType == "" {
+	if len(status) == 0 && queryType == "" {
 		rooms, err := cfg.DB.GetRoomsByOwnerIDOrParticipantID(r.Context(), userId)
 		if err != nil {
 			lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
@@ -110,7 +110,7 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteJSON(w, http.StatusOK, rooms)
 		return
 	} else if queryType == "owner" {
-		if status == "" {
+		if len(status) == 0 {
 			rooms, err := cfg.DB.GetRoomsByOwnerID(r.Context(), userId)
 			if err != nil {
 				lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
@@ -121,7 +121,7 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		}
 		rooms, err := cfg.DB.GetRoomsByOwnerIDAndStatus(r.Context(), database.GetRoomsByOwnerIDAndStatusParams{
 			OwnerID: userId,
-			Status:  status,
+			Column2: status,
 		})
 		if err != nil {
 			lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
@@ -130,7 +130,7 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteJSON(w, http.StatusOK, rooms)
 
 	} else if queryType == "participant" {
-		if status == "" {
+		if len(status) == 0 {
 			rooms, err := cfg.DB.GetRoomsByParticipantID(r.Context(), uuid.NullUUID{UUID: userId, Valid: true})
 			if err != nil {
 				lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
@@ -141,7 +141,7 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		}
 		rooms, err := cfg.DB.GetRoomsByParticipantIDAndStatus(r.Context(), database.GetRoomsByParticipantIDAndStatusParams{
 			ParticipantID: uuid.NullUUID{UUID: userId, Valid: true},
-			Status:        status,
+			Column2:       status,
 		})
 		if err != nil {
 			lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")

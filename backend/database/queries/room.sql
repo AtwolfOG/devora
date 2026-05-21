@@ -8,13 +8,13 @@ SELECT * FROM room WHERE owner_id = $1;
 SELECT * FROM room WHERE participant_id = $1;
 
 -- name: GetRoomsByOwnerIDAndStatus :many
-SELECT * FROM room WHERE owner_id = $1 AND status = $2;
+SELECT * FROM room WHERE owner_id = $1 AND status = ANY($2::room_status[]);
 
 -- name: GetRoomsByParticipantIDAndStatus :many
-SELECT * FROM room WHERE participant_id = $1 AND status = $2;
+SELECT * FROM room WHERE participant_id = $1 AND status = ANY($2::room_status[]);
 
 -- name: GetRoomsByOwnerIDOrParticipantIDAndStatus :many
-SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = $2;
+SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[]);
 
 -- name: GetRoomsByOwnerIDOrParticipantID :many
 SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1);
