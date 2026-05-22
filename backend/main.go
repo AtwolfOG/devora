@@ -84,6 +84,7 @@ func main() {
 	roomRouter.Post("/create", configWrapper(config, room.CreateRoom))
 	roomRouter.Get("/{room_id}", configWrapper(config, room.GetRoomByID))
 	roomRouter.Delete("/{room_id}", configWrapper(config, room.DeleteRoom))
+	roomRouter.Put("/{room_id}", configWrapper(config, room.UpdateRoom))
 	roomRouter.Post("/question", configWrapper(config, room.CreateQuestion))
 	roomRouter.Get("/questions/{room_id}", configWrapper(config, room.GetRoomQuestions))
 	roomRouter.Delete("/questions/{room_id}/{question_id}", configWrapper(config, room.DeleteQuestion))

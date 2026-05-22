@@ -22,9 +22,9 @@ INSERT INTO oauth (
 `
 
 type CreateEmailOauthParams struct {
-	UserID   uuid.UUID
-	Email    string
-	Password sql.NullString
+	UserID   uuid.UUID      `json:"user_id"`
+	Email    string         `json:"email"`
+	Password sql.NullString `json:"password"`
 }
 
 func (q *Queries) CreateEmailOauth(ctx context.Context, arg CreateEmailOauthParams) error {
@@ -42,9 +42,9 @@ INSERT INTO oauth (
 `
 
 type CreateGithubOauthParams struct {
-	UserID     uuid.UUID
-	ProviderID sql.NullString
-	Email      string
+	UserID     uuid.UUID      `json:"user_id"`
+	ProviderID sql.NullString `json:"provider_id"`
+	Email      string         `json:"email"`
 }
 
 func (q *Queries) CreateGithubOauth(ctx context.Context, arg CreateGithubOauthParams) error {
@@ -62,9 +62,9 @@ INSERT INTO oauth (
 `
 
 type CreateGoogleOauthParams struct {
-	UserID     uuid.UUID
-	ProviderID sql.NullString
-	Email      string
+	UserID     uuid.UUID      `json:"user_id"`
+	ProviderID sql.NullString `json:"provider_id"`
+	Email      string         `json:"email"`
 }
 
 func (q *Queries) CreateGoogleOauth(ctx context.Context, arg CreateGoogleOauthParams) error {
@@ -77,8 +77,8 @@ DELETE FROM oauth WHERE user_id = $1 AND provider = $2
 `
 
 type DeleteOauthByUserIdAndProviderParams struct {
-	UserID   uuid.UUID
-	Provider OauthProvider
+	UserID   uuid.UUID     `json:"user_id"`
+	Provider OauthProvider `json:"provider"`
 }
 
 func (q *Queries) DeleteOauthByUserIdAndProvider(ctx context.Context, arg DeleteOauthByUserIdAndProviderParams) error {
@@ -91,8 +91,8 @@ SELECT id, user_id, provider, provider_id, email, password, created_at, updated_
 `
 
 type GetOauthByEmailAndProviderParams struct {
-	Email    string
-	Provider OauthProvider
+	Email    string        `json:"email"`
+	Provider OauthProvider `json:"provider"`
 }
 
 func (q *Queries) GetOauthByEmailAndProvider(ctx context.Context, arg GetOauthByEmailAndProviderParams) (Oauth, error) {
@@ -116,8 +116,8 @@ SELECT id, user_id, provider, provider_id, email, password, created_at, updated_
 `
 
 type GetOauthByUserIdAndProviderParams struct {
-	UserID   uuid.UUID
-	Provider OauthProvider
+	UserID   uuid.UUID     `json:"user_id"`
+	Provider OauthProvider `json:"provider"`
 }
 
 func (q *Queries) GetOauthByUserIdAndProvider(ctx context.Context, arg GetOauthByUserIdAndProviderParams) (Oauth, error) {
@@ -141,8 +141,8 @@ SELECT email FROM oauth WHERE provider = $1 AND provider_id = $2
 `
 
 type GetOauthEmailByProviderIdParams struct {
-	Provider   OauthProvider
-	ProviderID sql.NullString
+	Provider   OauthProvider  `json:"provider"`
+	ProviderID sql.NullString `json:"provider_id"`
 }
 
 func (q *Queries) GetOauthEmailByProviderId(ctx context.Context, arg GetOauthEmailByProviderIdParams) (string, error) {
@@ -157,9 +157,9 @@ SELECT provider, provider_id, email FROM oauth WHERE user_id = $1
 `
 
 type GetOauthProvidersByUserIdRow struct {
-	Provider   OauthProvider
-	ProviderID sql.NullString
-	Email      string
+	Provider   OauthProvider  `json:"provider"`
+	ProviderID sql.NullString `json:"provider_id"`
+	Email      string         `json:"email"`
 }
 
 func (q *Queries) GetOauthProvidersByUserId(ctx context.Context, userID uuid.UUID) ([]GetOauthProvidersByUserIdRow, error) {
@@ -193,14 +193,14 @@ WHERE o.provider = $1 AND o.provider_id = $2 AND u.verified = TRUE
 `
 
 type GetUserByProviderIdParams struct {
-	Provider   OauthProvider
-	ProviderID sql.NullString
+	Provider   OauthProvider  `json:"provider"`
+	ProviderID sql.NullString `json:"provider_id"`
 }
 
 type GetUserByProviderIdRow struct {
-	Userid    uuid.UUID
-	Username  string
-	Useremail string
+	Userid    uuid.UUID `json:"userid"`
+	Username  string    `json:"username"`
+	Useremail string    `json:"useremail"`
 }
 
 func (q *Queries) GetUserByProviderId(ctx context.Context, arg GetUserByProviderIdParams) (GetUserByProviderIdRow, error) {
@@ -215,8 +215,8 @@ UPDATE oauth SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $
 `
 
 type UpdateOauthPasswordParams struct {
-	Password sql.NullString
-	UserID   uuid.UUID
+	Password sql.NullString `json:"password"`
+	UserID   uuid.UUID      `json:"user_id"`
 }
 
 func (q *Queries) UpdateOauthPassword(ctx context.Context, arg UpdateOauthPasswordParams) error {

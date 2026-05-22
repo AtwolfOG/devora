@@ -17,9 +17,9 @@ INSERT INTO refresh_token (token, user_id, expires_at) VALUES ($1, $2, $3)
 `
 
 type CreateRefreshTokenParams struct {
-	Token     string
-	UserID    uuid.UUID
-	ExpiresAt time.Time
+	Token     string    `json:"token"`
+	UserID    uuid.UUID `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {

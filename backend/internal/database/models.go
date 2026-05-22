@@ -34,8 +34,8 @@ func (e *Language) Scan(src interface{}) error {
 }
 
 type NullLanguage struct {
-	Language Language
-	Valid    bool // Valid is true if Language is not NULL
+	Language Language `json:"language"`
+	Valid    bool     `json:"valid"` // Valid is true if Language is not NULL
 }
 
 // Scan implements the Scanner interface.
@@ -77,8 +77,8 @@ func (e *OauthProvider) Scan(src interface{}) error {
 }
 
 type NullOauthProvider struct {
-	OauthProvider OauthProvider
-	Valid         bool // Valid is true if OauthProvider is not NULL
+	OauthProvider OauthProvider `json:"oauth_provider"`
+	Valid         bool          `json:"valid"` // Valid is true if OauthProvider is not NULL
 }
 
 // Scan implements the Scanner interface.
@@ -122,8 +122,8 @@ func (e *RoomStatus) Scan(src interface{}) error {
 }
 
 type NullRoomStatus struct {
-	RoomStatus RoomStatus
-	Valid      bool // Valid is true if RoomStatus is not NULL
+	RoomStatus RoomStatus `json:"room_status"`
+	Valid      bool       `json:"valid"` // Valid is true if RoomStatus is not NULL
 }
 
 // Scan implements the Scanner interface.
@@ -145,80 +145,80 @@ func (ns NullRoomStatus) Value() (driver.Value, error) {
 }
 
 type Answer struct {
-	QuestionID int32
-	RoomID     uuid.UUID
-	Answer     string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
+	Answer     string    `json:"answer"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type CodeSnippet struct {
-	Name       string
-	QuestionID int32
-	RoomID     uuid.UUID
-	Code       string
-	Language   Language
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	Name       string    `json:"name"`
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
+	Code       string    `json:"code"`
+	Language   Language  `json:"language"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type Oauth struct {
-	ID         uuid.UUID
-	UserID     uuid.UUID
-	Provider   OauthProvider
-	ProviderID sql.NullString
-	Email      string
-	Password   sql.NullString
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID         uuid.UUID      `json:"id"`
+	UserID     uuid.UUID      `json:"user_id"`
+	Provider   OauthProvider  `json:"provider"`
+	ProviderID sql.NullString `json:"provider_id"`
+	Email      string         `json:"email"`
+	Password   sql.NullString `json:"password"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
 }
 
 type Question struct {
-	ID          int32
-	RoomID      uuid.UUID
-	Done        bool
-	Passed      sql.NullBool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Title       string
-	Description string
-	IsCode      bool
+	ID          int32        `json:"id"`
+	RoomID      uuid.UUID    `json:"room_id"`
+	Done        bool         `json:"done"`
+	Passed      sql.NullBool `json:"passed"`
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   time.Time    `json:"updated_at"`
+	Title       string       `json:"title"`
+	Description string       `json:"description"`
+	IsCode      bool         `json:"is_code"`
 }
 
 type RefreshToken struct {
-	Token     string
-	UserID    uuid.UUID
-	ExpiresAt time.Time
+	Token     string    `json:"token"`
+	UserID    uuid.UUID `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 type Room struct {
-	ID            uuid.UUID
-	Description   string
-	OwnerID       uuid.UUID
-	StartTime     time.Time
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	ParticipantID uuid.NullUUID
-	Role          string
-	Company       string
-	StartedAt     sql.NullTime
-	EndedAt       sql.NullTime
-	Status        RoomStatus
+	ID            uuid.UUID     `json:"id"`
+	Description   string        `json:"description"`
+	OwnerID       uuid.UUID     `json:"owner_id"`
+	StartTime     time.Time     `json:"start_time"`
+	CreatedAt     time.Time     `json:"created_at"`
+	UpdatedAt     time.Time     `json:"updated_at"`
+	ParticipantID uuid.NullUUID `json:"participant_id"`
+	Role          string        `json:"role"`
+	Company       string        `json:"company"`
+	StartedAt     sql.NullTime  `json:"started_at"`
+	EndedAt       sql.NullTime  `json:"ended_at"`
+	Status        RoomStatus    `json:"status"`
 }
 
 type User struct {
-	ID                uuid.UUID
-	Email             string
-	Name              string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	ProfilePictureUrl string
-	Verified          bool
+	ID                uuid.UUID `json:"id"`
+	Email             string    `json:"email"`
+	Name              string    `json:"name"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	ProfilePictureUrl string    `json:"profile_picture_url"`
+	Verified          bool      `json:"verified"`
 }
 
 type VerificationLink struct {
-	UserID    uuid.UUID
-	Code      string
-	ExpiresAt time.Time
-	CreatedAt time.Time
+	UserID    uuid.UUID `json:"user_id"`
+	Code      string    `json:"code"`
+	ExpiresAt time.Time `json:"expires_at"`
+	CreatedAt time.Time `json:"created_at"`
 }

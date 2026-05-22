@@ -29,9 +29,9 @@ RETURNING id
 `
 
 type CreateUserParams struct {
-	Email    string
-	Name     string
-	Verified bool
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Verified bool   `json:"verified"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error) {

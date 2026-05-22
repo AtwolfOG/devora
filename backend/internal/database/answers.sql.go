@@ -17,9 +17,9 @@ VALUES ($1, $2, $3)
 `
 
 type CreateAnswerParams struct {
-	QuestionID int32
-	RoomID     uuid.UUID
-	Answer     string
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
+	Answer     string    `json:"answer"`
 }
 
 func (q *Queries) CreateAnswer(ctx context.Context, arg CreateAnswerParams) error {
@@ -32,8 +32,8 @@ DELETE FROM answers WHERE question_id = $1 AND room_id = $2
 `
 
 type DeleteAnswerByQuestionAndRoomIDParams struct {
-	QuestionID int32
-	RoomID     uuid.UUID
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
 }
 
 func (q *Queries) DeleteAnswerByQuestionAndRoomID(ctx context.Context, arg DeleteAnswerByQuestionAndRoomIDParams) error {
@@ -46,8 +46,8 @@ SELECT question_id, room_id, answer, created_at, updated_at FROM answers WHERE q
 `
 
 type GetAnswerByQuestionAndRoomIDParams struct {
-	QuestionID int32
-	RoomID     uuid.UUID
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
 }
 
 func (q *Queries) GetAnswerByQuestionAndRoomID(ctx context.Context, arg GetAnswerByQuestionAndRoomIDParams) (Answer, error) {
@@ -104,9 +104,9 @@ RETURNING question_id, room_id, answer, created_at, updated_at
 `
 
 type UpdateAnswerByQuestionAndRoomIDParams struct {
-	QuestionID int32
-	RoomID     uuid.UUID
-	Answer     string
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
+	Answer     string    `json:"answer"`
 }
 
 func (q *Queries) UpdateAnswerByQuestionAndRoomID(ctx context.Context, arg UpdateAnswerByQuestionAndRoomIDParams) (Answer, error) {

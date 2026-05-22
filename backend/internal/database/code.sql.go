@@ -15,10 +15,10 @@ VALUES ($1, $2, $3, $4)
 `
 
 type CreateCodeParams struct {
-	Name       string
-	QuestionID int32
-	Code       string
-	Language   Language
+	Name       string   `json:"name"`
+	QuestionID int32    `json:"question_id"`
+	Code       string   `json:"code"`
+	Language   Language `json:"language"`
 }
 
 func (q *Queries) CreateCode(ctx context.Context, arg CreateCodeParams) error {
@@ -36,8 +36,8 @@ DELETE FROM code_snippets WHERE name = $1 AND question_id = $2
 `
 
 type DeleteCodeParams struct {
-	Name       string
-	QuestionID int32
+	Name       string `json:"name"`
+	QuestionID int32  `json:"question_id"`
 }
 
 func (q *Queries) DeleteCode(ctx context.Context, arg DeleteCodeParams) error {
@@ -50,8 +50,8 @@ SELECT name, question_id, room_id, code, language, created_at, updated_at FROM c
 `
 
 type GetCodeParams struct {
-	Name       string
-	QuestionID int32
+	Name       string `json:"name"`
+	QuestionID int32  `json:"question_id"`
 }
 
 func (q *Queries) GetCode(ctx context.Context, arg GetCodeParams) (CodeSnippet, error) {
@@ -112,9 +112,9 @@ RETURNING name, question_id, room_id, code, language, created_at, updated_at
 `
 
 type UpdateCodeParams struct {
-	Name       string
-	QuestionID int32
-	Code       string
+	Name       string `json:"name"`
+	QuestionID int32  `json:"question_id"`
+	Code       string `json:"code"`
 }
 
 func (q *Queries) UpdateCode(ctx context.Context, arg UpdateCodeParams) (CodeSnippet, error) {

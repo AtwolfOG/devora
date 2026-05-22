@@ -18,8 +18,8 @@ UPDATE room SET status = 'cancelled', ended_at = CURRENT_TIMESTAMP, updated_at =
 `
 
 type CancelRoomParams struct {
-	ID      uuid.UUID
-	OwnerID uuid.UUID
+	ID      uuid.UUID `json:"id"`
+	OwnerID uuid.UUID `json:"owner_id"`
 }
 
 func (q *Queries) CancelRoom(ctx context.Context, arg CancelRoomParams) error {
@@ -32,11 +32,11 @@ INSERT INTO room (role, company, description, owner_id, start_time) VALUES ($1, 
 `
 
 type CreateRoomParams struct {
-	Role        string
-	Company     string
-	Description string
-	OwnerID     uuid.UUID
-	StartTime   time.Time
+	Role        string    `json:"role"`
+	Company     string    `json:"company"`
+	Description string    `json:"description"`
+	OwnerID     uuid.UUID `json:"owner_id"`
+	StartTime   time.Time `json:"start_time"`
 }
 
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
@@ -55,8 +55,8 @@ DELETE FROM room WHERE id = $1 AND owner_id = $2
 `
 
 type DeleteRoomParams struct {
-	ID      uuid.UUID
-	OwnerID uuid.UUID
+	ID      uuid.UUID `json:"id"`
+	OwnerID uuid.UUID `json:"owner_id"`
 }
 
 func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
@@ -69,8 +69,8 @@ UPDATE room SET status = 'reviewing', ended_at = CURRENT_TIMESTAMP, updated_at =
 `
 
 type EndRoomParams struct {
-	ID      uuid.UUID
-	OwnerID uuid.UUID
+	ID      uuid.UUID `json:"id"`
+	OwnerID uuid.UUID `json:"owner_id"`
 }
 
 func (q *Queries) EndRoom(ctx context.Context, arg EndRoomParams) error {
@@ -147,8 +147,8 @@ SELECT id, description, owner_id, start_time, created_at, updated_at, participan
 `
 
 type GetRoomsByOwnerIDAndStatusParams struct {
-	OwnerID uuid.UUID
-	Column2 []RoomStatus
+	OwnerID uuid.UUID    `json:"owner_id"`
+	Column2 []RoomStatus `json:"column_2"`
 }
 
 func (q *Queries) GetRoomsByOwnerIDAndStatus(ctx context.Context, arg GetRoomsByOwnerIDAndStatusParams) ([]Room, error) {
@@ -232,8 +232,8 @@ SELECT id, description, owner_id, start_time, created_at, updated_at, participan
 `
 
 type GetRoomsByOwnerIDOrParticipantIDAndStatusParams struct {
-	OwnerID uuid.UUID
-	Column2 []RoomStatus
+	OwnerID uuid.UUID    `json:"owner_id"`
+	Column2 []RoomStatus `json:"column_2"`
 }
 
 func (q *Queries) GetRoomsByOwnerIDOrParticipantIDAndStatus(ctx context.Context, arg GetRoomsByOwnerIDOrParticipantIDAndStatusParams) ([]Room, error) {
@@ -317,8 +317,8 @@ SELECT id, description, owner_id, start_time, created_at, updated_at, participan
 `
 
 type GetRoomsByParticipantIDAndStatusParams struct {
-	ParticipantID uuid.NullUUID
-	Column2       []RoomStatus
+	ParticipantID uuid.NullUUID `json:"participant_id"`
+	Column2       []RoomStatus  `json:"column_2"`
 }
 
 func (q *Queries) GetRoomsByParticipantIDAndStatus(ctx context.Context, arg GetRoomsByParticipantIDAndStatusParams) ([]Room, error) {
@@ -362,8 +362,8 @@ UPDATE room SET participant_id = $2 WHERE id = $1
 `
 
 type JoinRoomParams struct {
-	ID            uuid.UUID
-	ParticipantID uuid.NullUUID
+	ID            uuid.UUID     `json:"id"`
+	ParticipantID uuid.NullUUID `json:"participant_id"`
 }
 
 func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
@@ -416,8 +416,8 @@ UPDATE room SET participant_id = NULL WHERE id = $1 AND participant_id = $2
 `
 
 type RemoveParticipantParams struct {
-	ID            uuid.UUID
-	ParticipantID uuid.NullUUID
+	ID            uuid.UUID     `json:"id"`
+	ParticipantID uuid.NullUUID `json:"participant_id"`
 }
 
 func (q *Queries) RemoveParticipant(ctx context.Context, arg RemoveParticipantParams) error {
@@ -430,8 +430,8 @@ UPDATE room SET status = 'live', started_at = CURRENT_TIMESTAMP, updated_at = CU
 `
 
 type StartRoomParams struct {
-	ID      uuid.UUID
-	OwnerID uuid.UUID
+	ID      uuid.UUID `json:"id"`
+	OwnerID uuid.UUID `json:"owner_id"`
 }
 
 func (q *Queries) StartRoom(ctx context.Context, arg StartRoomParams) error {
@@ -444,12 +444,12 @@ UPDATE room SET role = $1, company = $2, description = $3, start_time = $4, upda
 `
 
 type UpdateRoomParams struct {
-	Role        string
-	Company     string
-	Description string
-	StartTime   time.Time
-	ID          uuid.UUID
-	OwnerID     uuid.UUID
+	Role        string    `json:"role"`
+	Company     string    `json:"company"`
+	Description string    `json:"description"`
+	StartTime   time.Time `json:"start_time"`
+	ID          uuid.UUID `json:"id"`
+	OwnerID     uuid.UUID `json:"owner_id"`
 }
 
 func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) error {

@@ -18,9 +18,9 @@ VALUES ($1, $2, $3)
 `
 
 type CreateVerificationLinkParams struct {
-	UserID    uuid.UUID
-	Code      string
-	ExpiresAt time.Time
+	UserID    uuid.UUID `json:"user_id"`
+	Code      string    `json:"code"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 func (q *Queries) CreateVerificationLink(ctx context.Context, arg CreateVerificationLinkParams) error {

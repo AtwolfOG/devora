@@ -16,10 +16,10 @@ INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3,
 `
 
 type CreateQuestionParams struct {
-	RoomID      uuid.UUID
-	Title       string
-	Description string
-	IsCode      bool
+	RoomID      uuid.UUID `json:"room_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	IsCode      bool      `json:"is_code"`
 }
 
 func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (int32, error) {
@@ -39,8 +39,8 @@ DELETE FROM questions WHERE id = $1 AND room_id = $2
 `
 
 type DeleteQuestionParams struct {
-	ID     int32
-	RoomID uuid.UUID
+	ID     int32     `json:"id"`
+	RoomID uuid.UUID `json:"room_id"`
 }
 
 func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) error {
@@ -53,8 +53,8 @@ SELECT id, room_id, done, passed, created_at, updated_at, title, description, is
 `
 
 type GetQuestionByIDParams struct {
-	ID     int32
-	RoomID uuid.UUID
+	ID     int32     `json:"id"`
+	RoomID uuid.UUID `json:"room_id"`
 }
 
 func (q *Queries) GetQuestionByID(ctx context.Context, arg GetQuestionByIDParams) (Question, error) {
@@ -153,11 +153,11 @@ UPDATE questions SET title = $1, description = $2, is_code = $3, updated_at = CU
 `
 
 type UpdateQuestionParams struct {
-	Title       string
-	Description string
-	IsCode      bool
-	ID          int32
-	RoomID      uuid.UUID
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	IsCode      bool      `json:"is_code"`
+	ID          int32     `json:"id"`
+	RoomID      uuid.UUID `json:"room_id"`
 }
 
 func (q *Queries) UpdateQuestion(ctx context.Context, arg UpdateQuestionParams) error {
