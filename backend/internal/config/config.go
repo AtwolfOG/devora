@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"time"
 
 	"github.com/AtwolfOG/devora/internal/database"
 	"github.com/joho/godotenv"
-	// _ "github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
 type Config struct {
@@ -31,21 +32,97 @@ type Config struct {
 func LoadConfig() *Config {
 	err := godotenv.Load(".env.local")
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading .env file: ", err.Error())
 	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("Error loading JWT secret")
+	}
+
+	githubClientId := os.Getenv("GITHUB_CLIENT_ID")
+	if githubClientId == "" {
+		log.Fatal("Error loading Github client id")
+	}
+
+	githubClientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
+	if githubClientSecret == "" {
+		log.Fatal("Error loading Github client secret")
+	}
+
+	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
+	if googleClientId == "" {
+		log.Fatal("Error loading Google client id")
+	}
+
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	if googleClientSecret == "" {
+		log.Fatal("Error loading Google client secret")
+	}
+
+	smtpUser := os.Getenv("SMTP_USER")
+	if smtpUser == "" {
+		log.Fatal("Error loading SMTP user")
+	}
+
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+	if smtpPassword == "" {
+		log.Fatal("Error loading SMTP password")
+	}
+
+	domain := os.Getenv("DOMAIN")
+	if domain == "" {
+		log.Fatal("Error loading domain")
+	}
+
+	appName := os.Getenv("APP_NAME")
+	if appName == "" {
+		log.Fatal("Error loading app name")
+	}
+
+	environment := os.Getenv("ENVIRONMENT")
+	if environment == "" {
+		log.Fatal("Error loading environment")
+	}
+
+	frontendUrl := os.Getenv("FRONTEND_URL")
+	if frontendUrl == "" {
+		log.Fatal("Error loading frontend url")
+	}
+
+	databaseUrl := os.Getenv("DATABASE_URL")
+	if databaseUrl == "" {
+		log.Fatal("Error loading database url")
+	}
+	
+	// Create database connection with proper configuration
+	db, err := sql.Open("postgres", databaseUrl)
+	if err != nil {
+		log.Fatal("Error opening database connection:", err)
+	}
+
+	// Set connection pool parameters for better performance
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	dbQueries := database.New(db)
+
 	return &Config{
-		DatabaseURL:        os.Getenv("DATABASE_URL"),
-		JWTSecret:          []byte(os.Getenv("JWT_SECRET")),
-		GithubClientId:     os.Getenv("GITHUB_CLIENT_ID"),
-		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
-		GoogleClientId:     os.Getenv("GOOGLE_CLIENT_ID"),
-		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		SmtpUser:           os.Getenv("SMTP_USER"),
-		SmtpPassword:       os.Getenv("SMTP_PASSWORD"),
-		FrontendUrl:        os.Getenv("FRONTEND_URL"),
-		Domain:             os.Getenv("DOMAIN"),
-		AppName:            os.Getenv("APP_NAME"),
-		Environment:        os.Getenv("ENVIRONMENT"),
+		DatabaseURL:        databaseUrl,
+		JWTSecret:          []byte(jwtSecret),
+		GithubClientId:     githubClientId,
+		GithubClientSecret: githubClientSecret,
+		GoogleClientId:     googleClientId,
+		GoogleClientSecret: googleClientSecret,
+		SmtpUser:           smtpUser,
+		SmtpPassword:       smtpPassword,
+		FrontendUrl:        frontendUrl,
+		Domain:             domain,
+		AppName:            appName,
+		Environment:        environment,
+		Database:           db,
+		DB:                 dbQueries,
 	}
 }
 

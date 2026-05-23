@@ -1,19 +1,16 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
-	"github.com/AtwolfOG/devora/internal/database"
 	"github.com/AtwolfOG/devora/room"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	_ "github.com/lib/pq"
 )
 
 const port = "8080"
@@ -27,20 +24,6 @@ func configWrapper(config *config.Config, handler func(w http.ResponseWriter, r 
 func main() {
 	config := config.LoadConfig()
 	r := chi.NewRouter()
-	// Create database connection with proper configuration
-	db, err := sql.Open("postgres", config.DatabaseURL)
-	if err != nil {
-		log.Fatal("Error opening database connection:", err)
-	}
-
-	// Set connection pool parameters for better performance
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(25)
-	db.SetConnMaxLifetime(5 * time.Minute)
-
-	config.Database = db
-	dbQueries := database.New(db)
-	config.DB = dbQueries
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{config.FrontendUrl},
@@ -68,14 +51,15 @@ func main() {
 	})
 	authRouter.Post("/signup", configWrapper(config, auth.SignupWithEmailAndPassword))
 	authRouter.Post("/login", configWrapper(config, auth.LoginWithEmailAndPassword))
-	authRouter.Get("/github/callback", configWrapper(config, auth.LoginWithGithub))
-	authRouter.Get("/github/link", configWrapper(config, auth.SendGithubLink))
-	authRouter.Get("/google/callback", configWrapper(config, auth.LoginWithGoogle))
-	authRouter.Get("/google/link", configWrapper(config, auth.SendGoogleLink))
+	authRouter.Get("/callback/github", configWrapper(config, auth.LoginWithGithub))
+	authRouter.Get("/link/github", configWrapper(config, auth.SendGithubLink))
+	authRouter.Get("/callback/google", configWrapper(config, auth.LoginWithGoogle))
+	authRouter.Get("/link/google", configWrapper(config, auth.SendGoogleLink))
 	authRouter.Get("/verify/{code}", configWrapper(config, auth.VerifyEmail))
-	authRouter.Get("/refresh", configWrapper(config, auth.RefreshToken))
+	authRouter.Post("/refresh", configWrapper(config, auth.RefreshToken))
 	authRouter.Get("/status", configWrapper(config, auth.Status))
 	r.Mount("/auth", authRouter)
+	
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(auth.AuthMiddleware)
 	// this is the room api
@@ -98,7 +82,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
-	err = srv.ListenAndServe()
+	err := srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}

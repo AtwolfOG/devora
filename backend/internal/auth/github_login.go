@@ -78,7 +78,7 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	githubOauthConfig := &oauth2.Config{
 		ClientID:     cfg.GithubClientId,
 		ClientSecret: cfg.GithubClientSecret,
-		RedirectURL:  cfg.FrontendUrl + "/callback/github",
+		RedirectURL:  cfg.FrontendUrl + "/auth/callback/github",
 		Scopes:       []string{"user:email"},
 		Endpoint:     github.Endpoint,
 	}
@@ -89,21 +89,26 @@ func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		return
 	}
 	// this is to verify the oauth state token
-	cookie, err := r.Cookie("oauth_state")
-	if err != nil {
+	state := r.URL.Query().Get("state")
+	if state == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing oauth state")
 		return
 	}
-	claims, err := verifyOAuthStateToken(cookie.Value, cfg.JWTSecret)
+	claims, err := verifyOAuthStateToken(state, cfg.JWTSecret)
 	if err != nil {
 		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
 		return
 	}
 	if claims.Provider != "github" {
-		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state provider")
 		return
 	}
-	if claims.Token != r.URL.Query().Get("state") {
+	cookie, err := r.Cookie("oauth_state")
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Missing oauth state")
+		return
+	}
+	if claims.Token != cookie.Value {
 		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
 		return
 	}
@@ -242,7 +247,7 @@ func SendGithubLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	githubOauthConfig := &oauth2.Config{
 		ClientID:     cfg.GithubClientId,
 		ClientSecret: cfg.GithubClientSecret,
-		RedirectURL:  cfg.FrontendUrl + "/callback/github",
+		RedirectURL:  cfg.FrontendUrl + "/auth/callback/github",
 		Scopes:       []string{"user:email"},
 		Endpoint:     github.Endpoint,
 	}
@@ -258,7 +263,7 @@ func SendGithubLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   cfg.Environment == "production",
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Expires:  time.Now().Add(15 * time.Minute),
 	}
 	http.SetCookie(w, &cookie)

@@ -46,7 +46,7 @@ func LoginWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 	googleOauthConfig := &oauth2.Config{
 		ClientID:     cfg.GoogleClientId,
 		ClientSecret: cfg.GoogleClientSecret,
-		RedirectURL:  cfg.FrontendUrl + "/callback/google",
+		RedirectURL:  cfg.FrontendUrl + "/auth/callback/google",
 		Scopes:       []string{"profile", "email"},
 		Endpoint:     google.Endpoint,
 	}
@@ -57,21 +57,26 @@ func LoginWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config)
 		return
 	}
 	// this is to verify the oauth state token
-	cookie, err := r.Cookie("oauth_state")
-	if err != nil {
+	state := r.URL.Query().Get("state")
+	if state == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing oauth state")
 		return
 	}
-	claims, err := verifyOAuthStateToken(cookie.Value, cfg.JWTSecret)
+	claims, err := verifyOAuthStateToken(state, cfg.JWTSecret)
 	if err != nil {
 		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
 		return
 	}
 	if claims.Provider != "google" {
-		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
+		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state provider")
 		return
 	}
-	if claims.Token != r.URL.Query().Get("state") {
+	cookie, err := r.Cookie("oauth_state")
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Missing oauth state")
+		return
+	}
+	if claims.Token != cookie.Value {
 		lib.WriteError(w, http.StatusBadRequest, "Invalid oauth state")
 		return
 	}
@@ -210,7 +215,7 @@ func SendGoogleLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	googleOauthConfig := &oauth2.Config{
 		ClientID:     cfg.GoogleClientId,
 		ClientSecret: cfg.GoogleClientSecret,
-		RedirectURL:  cfg.FrontendUrl + "/callback/google",
+		RedirectURL:  cfg.FrontendUrl + "/auth/callback/google",
 		Scopes:       []string{"profile", "email"},
 		Endpoint:     google.Endpoint,
 	}
@@ -230,7 +235,7 @@ func SendGoogleLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		Expires:  time.Now().Add(15 * time.Minute),
 	}
 	http.SetCookie(w, &cookie)
-	url := googleOauthConfig.AuthCodeURL(tokenString)
+	url := googleOauthConfig.AuthCodeURL(tokenString, oauth2.AccessTypeOffline, oauth2.SetAuthURLParam("prompt", "consent"))
 
 	lib.WriteJSON(w, http.StatusOK, map[string]string{
 		"url": url,
