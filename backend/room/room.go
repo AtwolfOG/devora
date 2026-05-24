@@ -2,6 +2,7 @@ package room
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -14,10 +15,10 @@ import (
 )
 
 type CreateRoomRequest struct {
-	Role        string    `json:"role"`
-	Company     string    `json:"company"`
-	Description string    `json:"description"`
-	StartTime   time.Time `json:"start_time"`
+	Role        string `json:"role"`
+	Company     string `json:"company"`
+	Description string `json:"description"`
+	StartTime   string `json:"start_time"`
 }
 
 func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -32,7 +33,14 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	req.Description = strings.TrimSpace(req.Description)
 	req.Company = strings.TrimSpace(req.Company)
 
-	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime.IsZero() {
+	// parse start_time
+	startTime, err := time.Parse(time.RFC3339, req.StartTime)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse start_time")
+		return
+	}
+
+	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == "" || startTime.IsZero() || startTime.Before(time.Now()) {
 		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
 		return
 	}
@@ -49,14 +57,14 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		Company:     req.Company,
 		Description: req.Description,
 		OwnerID:     userId,
-		StartTime:   req.StartTime,
+		StartTime:   startTime,
 	})
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to create room")
 		return
 	}
 
-	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room created successfully"})
+	lib.WriteJSON(w, http.StatusCreated, map[string]string{"message": "Room created successfully"})
 }
 
 func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -101,15 +109,63 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		}
 	}
 	queryType := r.URL.Query().Get("type")
-	if len(status) == 0 && queryType == "" {
-		rooms, err := cfg.DB.GetRoomsByOwnerIDOrParticipantID(r.Context(), userId)
+	switch queryType {
+		case "":
+		fmt.Println("status: ", status)
+		if len(status) == 0 {
+			rooms, err := cfg.DB.GetRoomsByOwnerIDOrParticipantID(r.Context(), userId)
+			if err != nil {
+				lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
+				return
+			}
+			// add is_owner and is_participant to the response
+			var data []struct{
+				database.Room
+				IsOwner bool `json:"is_owner"`
+				IsParticipant bool `json:"is_participant"`
+			}
+			for _, room := range rooms {
+				data = append(data, struct{
+					database.Room
+					IsOwner bool `json:"is_owner"`
+					IsParticipant bool `json:"is_participant"`
+				}{
+					Room:        room,
+					IsOwner:     room.OwnerID == userId,
+					IsParticipant: room.OwnerID != userId,
+				})
+			}
+			lib.WriteJSON(w, http.StatusOK, data)
+			return
+		}
+		rooms, err := cfg.DB.GetRoomsByOwnerIDOrParticipantIDAndStatus(r.Context(), database.GetRoomsByOwnerIDOrParticipantIDAndStatusParams{
+			OwnerID: userId,
+			Column2: status,
+		})
 		if err != nil {
 			lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
 			return
 		}
-		lib.WriteJSON(w, http.StatusOK, rooms)
+		// add is_owner and is_participant to the response
+			var data []struct{
+				database.Room
+				IsOwner bool `json:"is_owner"`
+				IsParticipant bool `json:"is_participant"`
+			}
+			for _, room := range rooms {
+				data = append(data, struct{
+					database.Room
+					IsOwner bool `json:"is_owner"`
+					IsParticipant bool `json:"is_participant"`
+				}{
+					Room:        room,
+					IsOwner:     room.OwnerID == userId,
+					IsParticipant: room.OwnerID != userId,
+				})
+			}
+			lib.WriteJSON(w, http.StatusOK, data)
 		return
-	} else if queryType == "owner" {
+		case "owner":
 		if len(status) == 0 {
 			rooms, err := cfg.DB.GetRoomsByOwnerID(r.Context(), userId)
 			if err != nil {
@@ -128,8 +184,8 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			return
 		}
 		lib.WriteJSON(w, http.StatusOK, rooms)
-
-	} else if queryType == "participant" {
+		return
+		case "participant":
 		if len(status) == 0 {
 			rooms, err := cfg.DB.GetRoomsByParticipantID(r.Context(), uuid.NullUUID{UUID: userId, Valid: true})
 			if err != nil {
@@ -148,6 +204,9 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			return
 		}
 		lib.WriteJSON(w, http.StatusOK, rooms)
+		return
+	default:
+		lib.WriteError(w, http.StatusBadRequest, "Invalid type")
 		return
 	}
 }
@@ -244,7 +303,15 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	req.Description = strings.TrimSpace(req.Description)
 	req.Company = strings.TrimSpace(req.Company)
 
-	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime.After(time.Now()) {
+	// parse start_time
+	startTime, err := time.Parse(time.RFC3339, req.StartTime)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse start_time")
+		return
+	}
+	req.StartTime = startTime.Format(time.RFC3339)
+
+	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == "" || startTime.IsZero() || startTime.Before(time.Now()) {
 		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
 		return
 	}
@@ -270,7 +337,7 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		Role:        req.Role,
 		Company:     req.Company,
 		Description: req.Description,
-		StartTime:   req.StartTime,
+		StartTime:   startTime,
 	})
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to update room")

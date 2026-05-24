@@ -7,4 +7,4 @@ CREATE INDEX idx_room_participant ON room(participant_id);
 -- +goose Down
 ALTER TABLE room DROP CONSTRAINT fk_room_participant;
 ALTER TABLE room DROP COLUMN participant_id;
-ALTER TABLE room DROP INDEX idx_room_participant;
+DROP INDEX IF EXISTS idx_room_participant;

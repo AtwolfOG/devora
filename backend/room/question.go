@@ -111,7 +111,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to create question")
 		return
 	}
-	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Question created successfully"})
+	lib.WriteJSON(w, http.StatusCreated, map[string]string{"message": "Question created successfully"})
 }
 
 func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {

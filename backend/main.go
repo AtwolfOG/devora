@@ -8,6 +8,7 @@ import (
 	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/room"
+	"github.com/AtwolfOG/devora/user"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -62,10 +63,16 @@ func main() {
 	
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(auth.AuthMiddleware)
+	// this is the user api
+	userRouter := chi.NewRouter()
+	userRouter.Get("/profile", configWrapper(config, user.GetUserData))
+	userRouter.Get("/dashboard", configWrapper(config, user.GetDashboardStat))
+	userRouter.Get("/{user_id}", configWrapper(config, user.GetUser))
+	apiRouter.Mount("/users", userRouter)
 	// this is the room api
 	roomRouter := chi.NewRouter()
 	roomRouter.Get("/", configWrapper(config, room.GetRooms))
-	roomRouter.Post("/create", configWrapper(config, room.CreateRoom))
+	roomRouter.Post("/", configWrapper(config, room.CreateRoom))
 	roomRouter.Get("/{room_id}", configWrapper(config, room.GetRoomByID))
 	roomRouter.Delete("/{room_id}", configWrapper(config, room.DeleteRoom))
 	roomRouter.Put("/{room_id}", configWrapper(config, room.UpdateRoom))

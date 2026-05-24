@@ -192,18 +192,20 @@ type RefreshToken struct {
 }
 
 type Room struct {
-	ID            uuid.UUID     `json:"id"`
-	Description   string        `json:"description"`
-	OwnerID       uuid.UUID     `json:"owner_id"`
-	StartTime     time.Time     `json:"start_time"`
-	CreatedAt     time.Time     `json:"created_at"`
-	UpdatedAt     time.Time     `json:"updated_at"`
-	ParticipantID uuid.NullUUID `json:"participant_id"`
-	Role          string        `json:"role"`
-	Company       string        `json:"company"`
-	StartedAt     sql.NullTime  `json:"started_at"`
-	EndedAt       sql.NullTime  `json:"ended_at"`
-	Status        RoomStatus    `json:"status"`
+	ID            uuid.UUID      `json:"id"`
+	Description   string         `json:"description"`
+	OwnerID       uuid.UUID      `json:"owner_id"`
+	StartTime     time.Time      `json:"start_time"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	ParticipantID uuid.NullUUID  `json:"participant_id"`
+	Role          string         `json:"role"`
+	Company       string         `json:"company"`
+	Status        RoomStatus     `json:"status"`
+	StartedAt     sql.NullTime   `json:"started_at"`
+	EndedAt       sql.NullTime   `json:"ended_at"`
+	Feedback      sql.NullString `json:"feedback"`
+	Passed        sql.NullBool   `json:"passed"`
 }
 
 type User struct {

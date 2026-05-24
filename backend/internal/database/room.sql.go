@@ -51,7 +51,7 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
 }
 
 const deleteRoom = `-- name: DeleteRoom :exec
-DELETE FROM room WHERE id = $1 AND owner_id = $2
+DELETE FROM room WHERE id = $1 AND owner_id = $2 AND status = 'pending'
 `
 
 type DeleteRoomParams struct {
@@ -78,8 +78,19 @@ func (q *Queries) EndRoom(ctx context.Context, arg EndRoomParams) error {
 	return err
 }
 
+const getPassRate = `-- name: GetPassRate :one
+SELECT COALESCE( ROUND( AVG( CASE WHEN passed = true THEN 1.0 ELSE 0.0 END) * 100, 2), 0.0)::float8 as pass_rate from room WHERE participant_id = $1 AND status = 'completed'
+`
+
+func (q *Queries) GetPassRate(ctx context.Context, participantID uuid.NullUUID) (float64, error) {
+	row := q.db.QueryRowContext(ctx, getPassRate, participantID)
+	var pass_rate float64
+	err := row.Scan(&pass_rate)
+	return pass_rate, err
+}
+
 const getRoomByID = `-- name: GetRoomByID :one
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE id = $1
 `
 
 func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
@@ -95,15 +106,33 @@ func (q *Queries) GetRoomByID(ctx context.Context, id uuid.UUID) (Room, error) {
 		&i.ParticipantID,
 		&i.Role,
 		&i.Company,
+		&i.Status,
 		&i.StartedAt,
 		&i.EndedAt,
-		&i.Status,
+		&i.Feedback,
+		&i.Passed,
 	)
 	return i, err
 }
 
+const getRoomCountByStatus = `-- name: GetRoomCountByStatus :one
+SELECT COUNT(*) FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[])
+`
+
+type GetRoomCountByStatusParams struct {
+	OwnerID uuid.UUID    `json:"owner_id"`
+	Column2 []RoomStatus `json:"column_2"`
+}
+
+func (q *Queries) GetRoomCountByStatus(ctx context.Context, arg GetRoomCountByStatusParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getRoomCountByStatus, arg.OwnerID, pq.Array(arg.Column2))
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getRoomsByOwnerID = `-- name: GetRoomsByOwnerID :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE owner_id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE owner_id = $1
 `
 
 func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
@@ -125,9 +154,11 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.Status,
 			&i.StartedAt,
 			&i.EndedAt,
-			&i.Status,
+			&i.Feedback,
+			&i.Passed,
 		); err != nil {
 			return nil, err
 		}
@@ -143,7 +174,7 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 }
 
 const getRoomsByOwnerIDAndStatus = `-- name: GetRoomsByOwnerIDAndStatus :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE owner_id = $1 AND status = ANY($2::room_status[])
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE owner_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC
 `
 
 type GetRoomsByOwnerIDAndStatusParams struct {
@@ -170,9 +201,11 @@ func (q *Queries) GetRoomsByOwnerIDAndStatus(ctx context.Context, arg GetRoomsBy
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.Status,
 			&i.StartedAt,
 			&i.EndedAt,
-			&i.Status,
+			&i.Feedback,
+			&i.Passed,
 		); err != nil {
 			return nil, err
 		}
@@ -188,7 +221,7 @@ func (q *Queries) GetRoomsByOwnerIDAndStatus(ctx context.Context, arg GetRoomsBy
 }
 
 const getRoomsByOwnerIDOrParticipantID = `-- name: GetRoomsByOwnerIDOrParticipantID :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE (owner_id = $1 OR participant_id = $1)
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE (owner_id = $1 OR participant_id = $1) ORDER BY start_time ASC
 `
 
 func (q *Queries) GetRoomsByOwnerIDOrParticipantID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
@@ -210,9 +243,11 @@ func (q *Queries) GetRoomsByOwnerIDOrParticipantID(ctx context.Context, ownerID 
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.Status,
 			&i.StartedAt,
 			&i.EndedAt,
-			&i.Status,
+			&i.Feedback,
+			&i.Passed,
 		); err != nil {
 			return nil, err
 		}
@@ -228,7 +263,7 @@ func (q *Queries) GetRoomsByOwnerIDOrParticipantID(ctx context.Context, ownerID 
 }
 
 const getRoomsByOwnerIDOrParticipantIDAndStatus = `-- name: GetRoomsByOwnerIDOrParticipantIDAndStatus :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[])
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[]) ORDER BY start_time ASC
 `
 
 type GetRoomsByOwnerIDOrParticipantIDAndStatusParams struct {
@@ -255,9 +290,11 @@ func (q *Queries) GetRoomsByOwnerIDOrParticipantIDAndStatus(ctx context.Context,
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.Status,
 			&i.StartedAt,
 			&i.EndedAt,
-			&i.Status,
+			&i.Feedback,
+			&i.Passed,
 		); err != nil {
 			return nil, err
 		}
@@ -273,7 +310,7 @@ func (q *Queries) GetRoomsByOwnerIDOrParticipantIDAndStatus(ctx context.Context,
 }
 
 const getRoomsByParticipantID = `-- name: GetRoomsByParticipantID :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE participant_id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE participant_id = $1
 `
 
 func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uuid.NullUUID) ([]Room, error) {
@@ -295,9 +332,11 @@ func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uui
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.Status,
 			&i.StartedAt,
 			&i.EndedAt,
-			&i.Status,
+			&i.Feedback,
+			&i.Passed,
 		); err != nil {
 			return nil, err
 		}
@@ -313,7 +352,7 @@ func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uui
 }
 
 const getRoomsByParticipantIDAndStatus = `-- name: GetRoomsByParticipantIDAndStatus :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room WHERE participant_id = $1 AND status = ANY($2::room_status[])
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE participant_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC
 `
 
 type GetRoomsByParticipantIDAndStatusParams struct {
@@ -340,9 +379,11 @@ func (q *Queries) GetRoomsByParticipantIDAndStatus(ctx context.Context, arg GetR
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.Status,
 			&i.StartedAt,
 			&i.EndedAt,
-			&i.Status,
+			&i.Feedback,
+			&i.Passed,
 		); err != nil {
 			return nil, err
 		}
@@ -358,7 +399,7 @@ func (q *Queries) GetRoomsByParticipantIDAndStatus(ctx context.Context, arg GetR
 }
 
 const joinRoom = `-- name: JoinRoom :exec
-UPDATE room SET participant_id = $2 WHERE id = $1
+UPDATE room SET participant_id = $2 WHERE id = $1 AND status = 'pending'
 `
 
 type JoinRoomParams struct {
@@ -372,7 +413,7 @@ func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
 }
 
 const listRooms = `-- name: ListRooms :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, started_at, ended_at, status FROM room
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room
 `
 
 func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
@@ -394,9 +435,11 @@ func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
 			&i.ParticipantID,
 			&i.Role,
 			&i.Company,
+			&i.Status,
 			&i.StartedAt,
 			&i.EndedAt,
-			&i.Status,
+			&i.Feedback,
+			&i.Passed,
 		); err != nil {
 			return nil, err
 		}
@@ -440,7 +483,7 @@ func (q *Queries) StartRoom(ctx context.Context, arg StartRoomParams) error {
 }
 
 const updateRoom = `-- name: UpdateRoom :exec
-UPDATE room SET role = $1, company = $2, description = $3, start_time = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 AND owner_id = $6
+UPDATE room SET role = $1, company = $2, description = $3, start_time = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 AND owner_id = $6 AND status = 'pending'
 `
 
 type UpdateRoomParams struct {
