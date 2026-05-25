@@ -14,7 +14,6 @@ import (
 )
 
 type CreateQuestionRequest struct {
-	RoomID      string `json:"room_id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	IsCode      bool   `json:"is_code"`
@@ -29,6 +28,11 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		lib.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	roomid := r.PathValue("room_id")
+	if roomid == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
+		return
+	}
 
 	// get user id from request context
 	userId, err := auth.GetIdFromReqCtx(r)
@@ -37,7 +41,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		return
 	}
 	// get room uuid
-	roomUUID, err := uuid.Parse(req.RoomID)
+	roomUUID, err := uuid.Parse(roomid)
 	if err != nil {
 		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
@@ -115,6 +119,11 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 }
 
 func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	userId, err := auth.GetIdFromReqCtx(r)
+	if err != nil {
+		lib.WriteError(w, http.StatusUnauthorized, "You are not authorized to perform this action")
+		return
+	}
 	roomId := r.PathValue("room_id")
 	if roomId == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
@@ -125,12 +134,43 @@ func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config
 		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
+	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		return
+	}
+	// check if user is owner or participant
+	if room.OwnerID != userId && (!room.ParticipantID.Valid || room.ParticipantID.UUID != userId) {
+		lib.WriteError(w, http.StatusUnauthorized, "You are not authorized to perform this action")
+		return
+	}
+	// check if room is pending and participant has not joined the room
+	if (room.Status == database.RoomStatusPending || room.Status == database.RoomStatusCancelled) && room.OwnerID != userId {
+		var data struct{
+			Questions []database.Question `json:"questions"`
+			IsOwner bool `json:"is_owner"`
+		}
+		data.Questions = []database.Question{}
+		data.IsOwner = (room.OwnerID == userId)
+		lib.WriteJSON(w, http.StatusOK, data)
+		return
+	}
 	questions, err := cfg.DB.GetQuestionsByRoomID(r.Context(), roomUUID)
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get questions")
 		return
 	}
-	lib.WriteJSON(w, http.StatusOK, questions)
+	var data struct{
+		Questions []database.Question `json:"questions"`
+		IsOwner bool `json:"is_owner"`
+	}
+	if questions == nil {
+		data.Questions = []database.Question{}
+	}else{
+		data.Questions = questions
+	}
+	data.IsOwner = (room.OwnerID == userId)
+	lib.WriteJSON(w, http.StatusOK, data)
 }
 
 func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {

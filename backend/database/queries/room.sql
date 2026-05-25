@@ -34,7 +34,7 @@ UPDATE room SET role = $1, company = $2, description = $3, start_time = $4, upda
 -- name: DeleteRoom :exec
 DELETE FROM room WHERE id = $1 AND owner_id = $2 AND status = 'pending';
 
--- name: JoinRoom :exec
+-- name: AddParticipantToRoom :exec
 UPDATE room SET participant_id = $2 WHERE id = $1 AND status = 'pending';
 
 -- name: StartRoom :exec
@@ -46,8 +46,8 @@ UPDATE room SET status = 'reviewing', ended_at = CURRENT_TIMESTAMP, updated_at =
 -- name: CancelRoom :exec
 UPDATE room SET status = 'cancelled', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2;
 
--- name: RemoveParticipant :exec
-UPDATE room SET participant_id = NULL WHERE id = $1 AND participant_id = $2;
+-- name: RemoveParticipantFromRoom :exec
+UPDATE room SET participant_id = NULL WHERE id = $1;
 
 
 -- name: ListRooms :many

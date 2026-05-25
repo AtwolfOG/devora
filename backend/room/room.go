@@ -40,8 +40,13 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 
-	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == "" || startTime.IsZero() || startTime.Before(time.Now()) {
+	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == ""  {
 		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
+		return
+	}
+
+	if startTime.IsZero() || startTime.Before(time.Now()) {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid start time")
 		return
 	}
 
@@ -68,6 +73,11 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 }
 
 func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	userId, err := auth.GetIdFromReqCtx(r)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
+		return
+	}
 	roomId := r.PathValue("room_id")
 	if roomId == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
@@ -83,7 +93,19 @@ func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
-	lib.WriteJSON(w, http.StatusOK, room)
+	var data struct{
+		database.Room
+		IsOwner bool `json:"is_owner"`
+		IsParticipant bool `json:"is_participant"`
+	}
+	data.Room = room
+	data.IsOwner = (room.OwnerID == userId)
+	if room.ParticipantID.Valid && room.ParticipantID.UUID == userId {
+		data.IsParticipant = true
+	}else{
+		data.IsParticipant = false
+	}
+	lib.WriteJSON(w, http.StatusOK, data)
 }
 
 func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -249,7 +271,7 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room deleted successfully"})
 }
 
-func JoinRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+func AddParticipantToRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
 	if roomId == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
@@ -266,10 +288,29 @@ func JoinRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
 		return
 	}
+	dbqueries, tx, err := cfg.NewTx(r.Context())
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to start transaction")
+		return
+	}
+	defer tx.Rollback()
 	// check if user is already a member of the room
-
+	room, err := dbqueries.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		return
+	}
+	if room.OwnerID == userId {
+		lib.WriteError(w, http.StatusUnauthorized, "You are the owner of this room")
+		return
+	}
+	
+	if room.ParticipantID.Valid {
+		lib.WriteError(w, http.StatusUnauthorized, "You are already a participant of this room")
+		return
+	}
 	// join room
-	err = cfg.DB.JoinRoom(r.Context(), database.JoinRoomParams{
+	err = dbqueries.AddParticipantToRoom(r.Context(), database.AddParticipantToRoomParams{
 		ID:            roomUUID,
 		ParticipantID: uuid.NullUUID{UUID: userId, Valid: true},
 	})
@@ -278,6 +319,46 @@ func JoinRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room joined successfully"})
+}
+
+func RemoveParticipantFromRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	roomId := r.PathValue("room_id")
+	if roomId == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
+		return
+	}
+	// get user id from request context
+	userId, err := auth.GetIdFromReqCtx(r)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
+		return
+	}
+	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		return
+	}
+	if !room.ParticipantID.Valid {
+		lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Participant removed from room successfully"})
+		return
+	}
+	// check if it is owner or participant
+	if room.OwnerID != userId && room.ParticipantID.UUID != userId {
+		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner or participant of this room")
+		return
+	}
+	// remove participant from room
+	err = cfg.DB.RemoveParticipantFromRoom(r.Context(), roomUUID)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to remove participant from room")
+		return
+	}
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Participant removed from room successfully"})
 }
 
 func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -309,10 +390,13 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusBadRequest, "Failed to parse start_time")
 		return
 	}
-	req.StartTime = startTime.Format(time.RFC3339)
 
-	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == "" || startTime.IsZero() || startTime.Before(time.Now()) {
+	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
+		return
+	}
+	if startTime.IsZero() || startTime.Before(time.Now()) {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid start time")
 		return
 	}
 	// get user id from request context

@@ -13,6 +13,20 @@ import (
 	"github.com/lib/pq"
 )
 
+const addParticipantToRoom = `-- name: AddParticipantToRoom :exec
+UPDATE room SET participant_id = $2 WHERE id = $1 AND status = 'pending'
+`
+
+type AddParticipantToRoomParams struct {
+	ID            uuid.UUID     `json:"id"`
+	ParticipantID uuid.NullUUID `json:"participant_id"`
+}
+
+func (q *Queries) AddParticipantToRoom(ctx context.Context, arg AddParticipantToRoomParams) error {
+	_, err := q.db.ExecContext(ctx, addParticipantToRoom, arg.ID, arg.ParticipantID)
+	return err
+}
+
 const cancelRoom = `-- name: CancelRoom :exec
 UPDATE room SET status = 'cancelled', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2
 `
@@ -398,20 +412,6 @@ func (q *Queries) GetRoomsByParticipantIDAndStatus(ctx context.Context, arg GetR
 	return items, nil
 }
 
-const joinRoom = `-- name: JoinRoom :exec
-UPDATE room SET participant_id = $2 WHERE id = $1 AND status = 'pending'
-`
-
-type JoinRoomParams struct {
-	ID            uuid.UUID     `json:"id"`
-	ParticipantID uuid.NullUUID `json:"participant_id"`
-}
-
-func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
-	_, err := q.db.ExecContext(ctx, joinRoom, arg.ID, arg.ParticipantID)
-	return err
-}
-
 const listRooms = `-- name: ListRooms :many
 SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room
 `
@@ -454,17 +454,12 @@ func (q *Queries) ListRooms(ctx context.Context) ([]Room, error) {
 	return items, nil
 }
 
-const removeParticipant = `-- name: RemoveParticipant :exec
-UPDATE room SET participant_id = NULL WHERE id = $1 AND participant_id = $2
+const removeParticipantFromRoom = `-- name: RemoveParticipantFromRoom :exec
+UPDATE room SET participant_id = NULL WHERE id = $1
 `
 
-type RemoveParticipantParams struct {
-	ID            uuid.UUID     `json:"id"`
-	ParticipantID uuid.NullUUID `json:"participant_id"`
-}
-
-func (q *Queries) RemoveParticipant(ctx context.Context, arg RemoveParticipantParams) error {
-	_, err := q.db.ExecContext(ctx, removeParticipant, arg.ID, arg.ParticipantID)
+func (q *Queries) RemoveParticipantFromRoom(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, removeParticipantFromRoom, id)
 	return err
 }
 
