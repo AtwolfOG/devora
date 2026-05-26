@@ -44,11 +44,13 @@ UPDATE room SET status = 'live', started_at = CURRENT_TIMESTAMP, updated_at = CU
 UPDATE room SET status = 'reviewing', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'live' AND owner_id = $2;
 
 -- name: CancelRoom :exec
-UPDATE room SET status = 'cancelled', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2;
+UPDATE room SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2;
 
 -- name: RemoveParticipantFromRoom :exec
 UPDATE room SET participant_id = NULL WHERE id = $1;
 
+-- name: RescheduleRoom :exec
+UPDATE room SET start_time = $2, status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND owner_id = $3 AND status = 'cancelled';
 
 -- name: ListRooms :many
 SELECT * FROM room;

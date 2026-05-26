@@ -95,7 +95,7 @@ func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 	}
 
 	lib.WriteJSON(w, http.StatusOK, map[string]any{
-		"name": user.Name,
+		"username": user.Name,
 		"email": user.Email,
 		"profile_picture_url": user.ProfilePictureUrl,
 	})
@@ -122,7 +122,7 @@ func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 
 	lib.WriteJSON(w, http.StatusOK, map[string]any{
 		"username": user.Name,
-		"user_image": user.ProfilePictureUrl,
+		"profile_picture_url": user.ProfilePictureUrl,
 		"email": user.Email,
 	})
 }

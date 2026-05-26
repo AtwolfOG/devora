@@ -28,7 +28,7 @@ func (q *Queries) AddParticipantToRoom(ctx context.Context, arg AddParticipantTo
 }
 
 const cancelRoom = `-- name: CancelRoom :exec
-UPDATE room SET status = 'cancelled', ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2
+UPDATE room SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'pending' AND owner_id = $2
 `
 
 type CancelRoomParams struct {
@@ -460,6 +460,21 @@ UPDATE room SET participant_id = NULL WHERE id = $1
 
 func (q *Queries) RemoveParticipantFromRoom(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, removeParticipantFromRoom, id)
+	return err
+}
+
+const rescheduleRoom = `-- name: RescheduleRoom :exec
+UPDATE room SET start_time = $2, status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND owner_id = $3 AND status = 'cancelled'
+`
+
+type RescheduleRoomParams struct {
+	ID        uuid.UUID `json:"id"`
+	StartTime time.Time `json:"start_time"`
+	OwnerID   uuid.UUID `json:"owner_id"`
+}
+
+func (q *Queries) RescheduleRoom(ctx context.Context, arg RescheduleRoomParams) error {
+	_, err := q.db.ExecContext(ctx, rescheduleRoom, arg.ID, arg.StartTime, arg.OwnerID)
 	return err
 }
 

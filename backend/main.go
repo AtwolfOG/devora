@@ -28,7 +28,7 @@ func main() {
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{config.FrontendUrl},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
@@ -65,7 +65,7 @@ func main() {
 	apiRouter.Use(auth.AuthMiddleware)
 	// this is the user api
 	userRouter := chi.NewRouter()
-	userRouter.Get("/profile", configWrapper(config, user.GetUserData))
+	// userRouter.Get("/profile", configWrapper(config, user.GetUserData))
 	userRouter.Get("/dashboard", configWrapper(config, user.GetDashboardStat))
 	userRouter.Get("/{user_id}", configWrapper(config, user.GetUser))
 	apiRouter.Mount("/users", userRouter)
@@ -76,8 +76,10 @@ func main() {
 	roomRouter.Get("/{room_id}", configWrapper(config, room.GetRoomByID))
 	roomRouter.Delete("/{room_id}", configWrapper(config, room.DeleteRoom))
 	roomRouter.Put("/{room_id}", configWrapper(config, room.UpdateRoom))
-	roomRouter.Put("/{room_id}/join", configWrapper(config, room.AddParticipantToRoom))
-	roomRouter.Put("/{room_id}/leave", configWrapper(config, room.RemoveParticipantFromRoom))
+	roomRouter.Patch("/{room_id}/join", configWrapper(config, room.AddParticipantToRoom))
+	roomRouter.Patch("/{room_id}/leave", configWrapper(config, room.RemoveParticipantFromRoom))
+	roomRouter.Patch("/{room_id}/cancel", configWrapper(config, room.CancelRoom))
+	roomRouter.Patch("/{room_id}/reschedule", configWrapper(config, room.RescheduleRoom))
 	roomRouter.Post("/{room_id}/questions", configWrapper(config, room.CreateQuestion))
 	roomRouter.Get("/{room_id}/questions", configWrapper(config, room.GetRoomQuestions))
 	roomRouter.Delete("/{room_id}/questions/{question_id}", configWrapper(config, room.DeleteQuestion))
