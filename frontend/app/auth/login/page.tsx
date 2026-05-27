@@ -1,11 +1,14 @@
 "use client"
 import customToast from "@/components/customToast";
+import { api } from "@/lib/api";
 import { ErrorMessage } from "@hookform/error-message";
 import axios from "axios";
 import { Eye, EyeClosed, Mail, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useState, type BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
+import { FaGithub } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 
 interface LoginForm {
     email: string;
@@ -16,6 +19,7 @@ interface LoginForm {
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>();
+    const [loadingLink, setLoadingLink] = useState(false)
     return (
         <main className="flex items-center justify-center h-screen w-full">
             <div className="flex flex-col items-center justify-center max-w-[450px] w-[90%] rounded-2xl shadow-2xl backdrop-blur-lg bg-black/10  border-(--border) p-8 opacity-85 animate-slide-in">
@@ -25,40 +29,41 @@ export default function LoginPage() {
                         <div className="flex flex-col gap-2 relative">
                             <label htmlFor="email" className="text-sm">Email</label>
                             <input type="email" placeholder="Email" className="bg-transparent! py-2 px-4" {...register("email", {
-                            required: {
-                                value: true,
-                                message: "Email is required",
-                            }})} />
-                            <Mail strokeWidth={2} size={20} className="absolute right-4 bottom-0 -translate-y-1/2 cursor-pointer opacity-50"/>
+                                required: {
+                                    value: true,
+                                    message: "Email is required",
+                                }
+                            })} />
+                            <Mail strokeWidth={2} size={20} className="absolute right-4 bottom-0 -translate-y-1/2 cursor-pointer opacity-50" />
                         </div>
                         <ErrorMessage
                             errors={errors}
                             name="email"
-                            render={({ message }) => <p className="text-(--destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
+                            render={({ message }) => <p className="text-(--destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2} />{message}</p>}
                         />
                     </div>
                     <div>
                         <div className="flex flex-col gap-2 relative">
                             <label htmlFor="password" className="text-sm">Password</label>
                             <input type={showPassword ? "text" : "password"} placeholder="Password" className="bg-transparent! py-2 px-4" {...register("password", {
-                                          required: {
-                                            value: true,
-                                            message: "Password is required",
-                                          },
-                                        })} />
+                                required: {
+                                    value: true,
+                                    message: "Password is required",
+                                },
+                            })} />
                             {showPassword ? <Eye strokeWidth={2} size={20} className="absolute right-4 bottom-0 -translate-y-1/2 cursor-pointer opacity-50" onClick={() => setShowPassword(!showPassword)} /> : <EyeClosed strokeWidth={2} size={20} className="absolute right-4 bottom-0 -translate-y-1/2 cursor-pointer opacity-50" onClick={() => setShowPassword(!showPassword)} />}
                         </div>
                         <ErrorMessage
                             errors={errors}
                             name="password"
-                            render={({ message }) => <p className="text-(--destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2}/>{message}</p>}
+                            render={({ message }) => <p className="text-(--destructive)! text-sm flex items-center"><TriangleAlert className="inline mx-1" size={16} strokeWidth={2} />{message}</p>}
                         />
                     </div>
                     <div className="flex justify-center gap-8 flex-col my-4 opacity-80">
                         <button type="submit" className={`bg-(--bg-cta)   rounded text-(--text-cta) py-1 px-2 hover:bg-(--bg-cta-hover) duration-100 cursor-pointer ${isSubmitting ? "opacity-50 cursor-not-allowed!" : ""}`} disabled={isSubmitting} onClick={handleSubmit(handleLogin)}>Login</button>
                         <div className="flex justify-center gap-4 self-start">
-                            <button className="bg-black/45 py-1 px-2 rounded hover:bg-black/65 duration-100 cursor-pointer">Github</button>
-                            <button className="bg-black/45 py-1 px-2 rounded hover:bg-black/65 duration-100 cursor-pointer">Google</button>
+                            <button className="flex flex-row gap-2 items-center bg-black/45 py-1 px-2 rounded hover:bg-black/65 duration-100 cursor-pointer" disabled={loadingLink} onClick={() => handleGithub(setLoadingLink)}><FaGithub /> Github</button>
+                            <button className="flex flex-row gap-2 items-center bg-black/45 py-1 px-2 rounded hover:bg-black/65 duration-100 cursor-pointer" disabled={loadingLink} onClick={() => handleGoogle(setLoadingLink)}><FcGoogle /> Google</button>
                         </div>
                     </div>
                     <p className="text-center opacity-80 text-sm!">Don&apos;t have an account? <Link href="/auth/signup" className="text-(--bg-cta) underline">Sign Up</Link></p>
@@ -68,21 +73,60 @@ export default function LoginPage() {
     );
 }
 
-async function handleLogin(data: LoginForm, e?: BaseSyntheticEvent){
-    try{
+async function handleLogin(data: LoginForm, e?: BaseSyntheticEvent) {
+    try {
         e?.preventDefault();
-        await new Promise((resolve)=>setTimeout(resolve, 2000));
-        const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, data);
+        const res = await api.post(`/auth/login`, data);
         customToast.success(res.data.message)
     }
-    catch(err){
-        if(axios.isAxiosError(err)){
+    catch (err) {
+        if (axios.isAxiosError(err)) {
             const msg = err.response?.data.error || "An error occurred"
             customToast.error(msg)
         }
-        else{
+        else {
             console.log("error: ", err);
             customToast.error("An error occurred")
         }
     }
-} 
+}
+
+async function handleGoogle(setLoadingLink: (loading: boolean) => void) {
+    setLoadingLink(true)
+    try {
+        const res = await api.get(`/auth/link/google`);
+        const url = res.data.url
+        customToast.success("You should be redirected soon")
+        window.location.href = url
+    }
+    catch (err) {
+        if (axios.isAxiosError(err)) {
+            const msg = err.response?.data.error || "An error occurred"
+            customToast.error(msg)
+        }
+        else {
+            customToast.error("An error occurred")
+        }
+    }
+    setLoadingLink(false)
+}
+
+async function handleGithub(setLoadingLink: (loading: boolean) => void) {
+    setLoadingLink(true)
+    try {
+        const res = await api.get(`/auth/link/github`);
+        const url = res.data.url
+        customToast.success("You should be redirected soon")
+        window.location.href = url
+    }
+    catch (err) {
+        if (axios.isAxiosError(err)) {
+            const msg = err.response?.data.error || "An error occurred"
+            customToast.error(msg)
+        }
+        else {
+            customToast.error("An error occurred")
+        }
+    }
+    setLoadingLink(false)
+}

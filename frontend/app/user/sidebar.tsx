@@ -30,7 +30,7 @@ export default function Sidebar(){
         <>
       <button
         onClick={(e) => {setToggle((state) => !state); e.stopPropagation()}}
-        className="outline-none rounded-xl backdrop-blur-xl absolute right-0 p-2 size-12 text-3xl bg-[hsl(from_var(--bg-cta)_h_s_15%)] m-4 md:hidden "
+        className="outline-none rounded-xl backdrop-blur-xl absolute z-999 right-0 p-2 size-12 text-3xl bg-[hsl(from_var(--bg-cta)_h_s_15%)] m-4 md:hidden "
       >
         {toggle ? <X /> : <Menu />}
       </button>

@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useForm, type FieldValues} from "react-hook-form";
 import { Editor } from "@monaco-editor/react";
+import { api } from "@/lib/api";
+import customToast from "@/components/customToast";
 
 
 type Problem = {
@@ -49,25 +51,44 @@ const testData: Problem[] = [
     }
 ]
 
-export function ProblemsCard(){
+async function deleteProblem(roomId: string, id: string, setProblems: (problems: Problem[] | ((prev: Problem[]) => Problem[]) ) => void){
+    try{
+        await api.delete(`/api/rooms/${roomId}/questions/${id}`);
+        setProblems((prev) => prev.filter((p) => p.id !== id));
+        customToast.success("Problem deleted successfully");
+    }catch(error){
+        customToast.error("Failed to delete problem");
+    }
+}
+
+export function ProblemsCard({id, isOwner}: {id: string, isOwner: boolean}){
     const [problems, setProblems] = useState<Problem[]>([])
-    const params = useParams();
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
     const fetchProblems = useCallback(async () => {
+        setLoading(true);
             try{
-                const response = await fetch(`/api/interviews/${params.id}/problems`);
-                if (!response.ok) {
-                    throw new Error("Failed to fetch problems");
-                }
-                const data = await response.json();
-                setProblems(data);
+                const res = await api.get(`/api/rooms/${id}/questions`);
+                const questions = res.data.questions;
+                setProblems(questions);
             }catch(error){
-                console.log(error);
+                setError("Failed to fetch problems");
+            }
+            finally{
+                setLoading(false);
             }
         },[])
     useEffect(() => {
-       setProblems(testData);
+       fetchProblems();
     }, [fetchProblems]);
+    if(loading){
+        return <p>Loading...</p>
+    }
+    if(error){
+        return <p>Error: {error}</p>
+    }
     return (
+        (problems.length != 0 || isOwner) && 
         <div className="my-6 bg-(--bg-muted)/60 border-(--border) border rounded-lg p-6">
             <h4 className="text-xl!">Problems</h4>
             <div className="flex flex-col gap-2 my-6">
@@ -76,37 +97,37 @@ export function ProblemsCard(){
                         {problem.type == "code"? <div className="p-2 bg-(--bg-light) text-(--text-secondary)/70 rounded-lg"><FileCode /> </div>: <div className="p-2 bg-(--bg-light) text-(--text-secondary)/70 rounded-lg"><TextIcon /></div>}
                         <div className="flex flex-col gap-1">
                             <h5>{problem.title}</h5>
-                            <p className="text-(--text-secondary) text-sm!">{problem.description}</p>
+                            <p className="text-(--text-secondary) text-sm! line-clamp-2">{problem.description}</p>
                         </div>
-                        <button className="ml-auto hover:bg-(--destructive)/10 text-(--destructive) px-4 py-2 rounded-lg"><Trash2 /></button>
+                        {isOwner && <button onClick={()=> deleteProblem(id as string, problem.id, setProblems)} className="ml-auto hover:bg-(--destructive)/10 text-(--destructive) px-4 py-2 rounded-lg"><Trash2 /></button>}
                     </div>
                 ))}
             </div>
-            <AddProblemModal fetchProblems={fetchProblems} />
+            {isOwner && <AddProblemModal fetchProblems={fetchProblems} />}
         </div>
     )
 }
 function AddProblemModal({fetchProblems}: {fetchProblems: () => void}){
     const [type, setType] = useState("");
     const {register, watch, handleSubmit, formState: {isSubmitting}} = useForm()
-    const params = useParams();
+    const {id} = useParams();
     const language = watch("language");
     const onSubmit = async (data: FieldValues) => {
-        console.log(data);
         try{
-            const response = await fetch(`/api/interviews/${params.id}/problems`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-            });
-            if (!response.ok) {
-                throw new Error("Failed to add problem");
+
+            const question = {
+                title: data.title,
+                description: data.description,
+                is_code: type === "coding",
+                language: language,
+                code: data.code,
             }
+
+            await api.post(`/api/rooms/${id}/questions`, question);
             fetchProblems();
+            customToast.success("Problem added successfully");
         }catch(error){
-            console.log(error);
+            customToast.error("Failed to add problem");
         }
     }
     return (

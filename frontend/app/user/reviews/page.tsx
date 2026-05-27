@@ -5,69 +5,28 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Share, Ellipsis, Plus } from "lucide-react";
+import { Pencil, Share, Ellipsis, Plus, Eye } from "lucide-react";
 import Link from "next/link";
-import { Button } from "react-day-picker";
+import CreateInterview from "@/components/createInterview";
+import { Room } from "@/lib/types";
+import { api } from "@/lib/api";
+import { User } from "@/components/user";
 
-type Interview = {
-	id: string;
-	role: string;
-	candidate: string;
-	company: string;
-    date: string;
-    time: string;
-	status: string;
+
+type interviewType = Room & {
+    is_owner: boolean;
+    is_participant: boolean;
 }
-const yourInterviews = [
-    {
-        candidate: "John Doe",
-        role: "Software Engineer",
-        date: "2022-01-01",
-        time: "10:00 AM",
-        company: "Google",
-        status: "Completed"
-    },
-    {
-        candidate: "John Doe",
-        role: "Software Engineer",
-        date: "2022-01-01",
-        time: "10:00 AM",
-        company: "Google",
-        status: "Reviewing"
-    },
-    {
-        candidate: "John Doe",
-        role: "Software Engineer",
-        date: "2022-01-01",
-        time: "10:00 AM",
-        company: "Google",
-        status: "Completed"
-    },
-    {
-        interviewer: "John Doe",
-        role: "Software Engineer",
-        date: "2022-01-01",
-        time: "10:00 AM",
-        company: "Google",
-        status: "Completed"
-    },
-    {
-        interviewer: "John Doe",
-        role: "Software Engineer",
-        date: "2022-01-01",
-        time: "10:00 AM",
-        company: "Google",
-        status: "Reviewing"
-    },
-    {
-        interviewer: "John Doe",
-        role: "Software Engineer",
-        date: "2022-01-01",
-        time: "10:00 AM",
-        company: "Google",
-        status: "Reviewing"
-    }
-]
+
+type Review = {
+    id: string;
+    role: string;
+    status: string;
+    candidate: string;
+    interviewer: string;
+    company: string;
+    started_at: string;
+}
 
 export default function ReviewsPage() {
     const router = useRouter();
@@ -76,6 +35,27 @@ export default function ReviewsPage() {
     const searchQuery = searchParams.get("search") || "";
     const [searchInput, setSearchInput ] = useState<string>(searchQuery) 
     const debouncedSearch = useDebounce(searchInput, 300);
+    const [interviews, setInterviews] = useState<interviewType[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get<interviewType[]>(`/api/rooms?status=reviewing,completed`);
+            console.log(res.data)
+            setInterviews(res.data);
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                setError(error.response?.data.error || "An error occurred");
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+    useEffect(() => {
+        fetchData()
+    }, [])
     useEffect(() => {
         const params = new URLSearchParams();
 
@@ -84,6 +64,7 @@ export default function ReviewsPage() {
         }
         params.set("status", status);
         router.replace(`/user/reviews?${params.toString()}`);
+        // Replace with API call to fetch reviews
     }, [debouncedSearch, router, status]);
     
     function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>){
@@ -102,10 +83,7 @@ export default function ReviewsPage() {
                         <p className="text-sm!">Manage all interview sessions in one place</p>
                     </div>
                     <div>
-                    <button className="flex gap-2 items-center px-2 py-2 bg-(--bg-cta-darker) hover:bg-(--bg-cta-hover) rounded-lg w-max">
-                        <Plus/>
-                        Create Interview
-                    </button>
+                    <CreateInterview/>
                     </div>
                 </div>
             
@@ -125,12 +103,14 @@ export default function ReviewsPage() {
                         </div>
             </main>
              <div className="my-6">
-                <h5 className="text-(--text-primary)">Created by you</h5>
-                <p className="text-sm!">Interviews you created</p>
-                <div className="my-4">
+                {loading ? (
+                    <div className="w-full flex items-center justify-center">Loading...</div>
+                ) : (
+                    <div className="my-4">
                     <Table className="border border-(--border)">
                         <TableHeader>
                             <TableRow className="border-(--border) border bg-(--bg-muted)">
+                                <TableHead>Interviewer</TableHead>
                                 <TableHead>Role</TableHead>
                                 <TableHead>Candidate</TableHead>
                                 <TableHead>Time</TableHead>
@@ -140,11 +120,12 @@ export default function ReviewsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {yourInterviews.map((interview, index) => (
+                            {filterData(interviews, status, debouncedSearch).map((interview, index) => (
                                     <TableRow key={index} className="border-(--border) relative">
-                                        <TableCell><Link href={`/user/reviews/${index}`} className="absolute inset-0 hover:bg-black/10 hover:rounded-2xl duration-100" aria-label="view interview"/>{interview.role}</TableCell>
-                                        <TableCell>{interview.candidate}</TableCell>
-                                        <TableCell>{interview.date + " " + interview.time}</TableCell>
+                                        <TableCell><Link href={`/user/reviews/${interview.id}`} className="absolute inset-0 hover:bg-black/10 hover:rounded-2xl duration-100" aria-label="view interview"/>{interview.is_owner ? <p>You</p> : <User id={interview.owner_id} />}</TableCell>
+                                        <TableCell>{interview.role}</TableCell>
+                                        <TableCell>{interview.is_participant ? <p>You</p> : interview.participant_id && <User id={interview.participant_id} />}</TableCell>
+                                        <TableCell>{new Date(interview.started_at.Time).toLocaleString()}</TableCell>
                                         <TableCell>{interview.company}</TableCell>
                                         <TableCell>{interview.status}</TableCell>
                                         <TableCell className="text-center isolate">
@@ -155,14 +136,18 @@ export default function ReviewsPage() {
                                                     </div>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent >
-                                                    <DropdownMenuItem>
+                                                    {interview.is_owner && <DropdownMenuItem>
                                                         <Pencil />
                                                         Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
+                                                    </DropdownMenuItem>}
+                                                    {interview.is_participant && interview.status == "completed" && <DropdownMenuItem>
+                                                        <Eye />
+                                                        View
+                                                    </DropdownMenuItem>}
+                                                    {interview.is_owner && <DropdownMenuItem>
                                                         <Share />
                                                         Share
-                                                    </DropdownMenuItem>
+                                                    </DropdownMenuItem>}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -171,7 +156,7 @@ export default function ReviewsPage() {
                         </TableBody>
                     </Table>
                 </div>
-                
+                )}
             </div>
         </div>
         
@@ -179,30 +164,10 @@ export default function ReviewsPage() {
 }
 
 
-function useReviews(){
-    const [reviews, setReviews] = useState<{error: string | null, data: Interview[], loading: boolean}>({error: null, data: [], loading: false});
-    const searchParams = useSearchParams();
-    const status = searchParams.get("status") || "all";
-    const searchQuery = searchParams.get("search") || "";
-    useEffect(() => {
-        const timer = setTimeout(async () => {
-            try{
-                setReviews({error: null, data: [], loading: true});
-                const res = await axios.get<{data: Interview[]}>(`${process.env.NEXT_PUBLIC_BACKEND_URL}/interviews?status=${status}&${searchQuery}`);
-                setReviews({error: null, data: res.data.data, loading: false});
-            }
-            catch(err){
-                if(axios.isAxiosError(err)){
-                    const msg = err.response?.data.error || "An error occurred"
-                    setReviews({error: msg, data: [], loading: false});
-                }
-                else{
-                    console.log("error: ", err);
-                    setReviews({error: "An error occurred", data: [], loading: false});
-                }
-            }
-        }, 300)
-        return () => clearTimeout(timer);
-    }, [status, searchQuery]);
-    return reviews;
+function filterData(data: interviewType[], filter: string, searchQuery: string){
+    return data.filter((item) => {
+        const matchesFilter = filter === "all" || item.status === filter;
+        const matchesSearch = item.role.toLowerCase().includes(searchQuery.toLowerCase()) || item.description.toLowerCase().includes(searchQuery.toLowerCase()) || item.company.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesFilter && matchesSearch;
+    })
 }
