@@ -53,18 +53,18 @@ func (q *Queries) DeleteCode(ctx context.Context, arg DeleteCodeParams) error {
 	return err
 }
 
-const getCodeBy = `-- name: GetCodeBy :one
-SELECT name, question_id, room_id, code, language, created_at, updated_at FROM code_snippets WHERE name = $1 AND question_id = $2 AND room_id = $3
+const getCodeByQuestionAndRoomIDAndName = `-- name: GetCodeByQuestionAndRoomIDAndName :one
+SELECT name, question_id, room_id, code, language, created_at, updated_at FROM code_snippets WHERE question_id = $1 AND room_id = $2 AND name = $3
 `
 
-type GetCodeByParams struct {
-	Name       string    `json:"name"`
+type GetCodeByQuestionAndRoomIDAndNameParams struct {
 	QuestionID int32     `json:"question_id"`
 	RoomID     uuid.UUID `json:"room_id"`
+	Name       string    `json:"name"`
 }
 
-func (q *Queries) GetCodeBy(ctx context.Context, arg GetCodeByParams) (CodeSnippet, error) {
-	row := q.db.QueryRowContext(ctx, getCodeBy, arg.Name, arg.QuestionID, arg.RoomID)
+func (q *Queries) GetCodeByQuestionAndRoomIDAndName(ctx context.Context, arg GetCodeByQuestionAndRoomIDAndNameParams) (CodeSnippet, error) {
+	row := q.db.QueryRowContext(ctx, getCodeByQuestionAndRoomIDAndName, arg.QuestionID, arg.RoomID, arg.Name)
 	var i CodeSnippet
 	err := row.Scan(
 		&i.Name,

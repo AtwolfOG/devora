@@ -178,3 +178,70 @@ func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Code saved successfully"})
 }
+
+func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+	questionIdParam := r.PathValue("question_id")
+	if questionIdParam == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing question id")
+		return
+	}
+	questionId, err := strconv.Atoi(questionIdParam)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid question id")
+		return
+	}
+	roomId := r.PathValue("room_id")
+	if roomId == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
+		return
+	}
+	answer, err := cfg.DB.GetAnswerByQuestionAndRoomID(r.Context(), database.GetAnswerByQuestionAndRoomIDParams{
+		QuestionID: int32(questionId),
+		RoomID:     roomUUID,
+	})
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get answer")
+		return
+	}
+	lib.WriteJSON(w, http.StatusOK, answer)
+}
+
+func GetCode(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+	questionIdParam := r.PathValue("question_id")
+	if questionIdParam == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing question id")
+		return
+	}
+	questionId, err := strconv.Atoi(questionIdParam)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid question id")
+		return
+	}
+	roomId := r.PathValue("room_id")
+	if roomId == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
+		return
+	}
+
+	code, err := cfg.DB.GetCodeByQuestionAndRoomIDAndName(r.Context(), database.GetCodeByQuestionAndRoomIDAndNameParams{
+		QuestionID: int32(questionId),
+		RoomID:     roomUUID,
+		Name:       "main",
+	})
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get code")
+		return
+	}
+
+	lib.WriteJSON(w, http.StatusOK, code)
+}
