@@ -1,6 +1,7 @@
 package room
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -179,7 +180,7 @@ func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Code saved successfully"})
 }
 
-func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing question id")
@@ -204,6 +205,9 @@ func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 		QuestionID: int32(questionId),
 		RoomID:     roomUUID,
 	})
+	if err == sql.ErrNoRows{
+		return
+	}
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get answer")
 		return
@@ -211,7 +215,7 @@ func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 	lib.WriteJSON(w, http.StatusOK, answer)
 }
 
-func GetCode(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+func GetCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing question id")
@@ -238,6 +242,10 @@ func GetCode(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 		RoomID:     roomUUID,
 		Name:       "main",
 	})
+	// no row error should never happen here because a code snippet is always created when the question is created
+	// if err == sql.ErrNoRows{
+	// 	return
+	// }
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get code")
 		return
