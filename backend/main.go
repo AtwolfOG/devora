@@ -60,7 +60,7 @@ func main() {
 	authRouter.Post("/refresh", configWrapper(config, auth.RefreshToken))
 	authRouter.Get("/status", configWrapper(config, auth.Status))
 	r.Mount("/auth", authRouter)
-	
+
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(auth.AuthMiddleware)
 	// this is the user api

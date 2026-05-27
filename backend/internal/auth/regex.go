@@ -9,10 +9,10 @@ func IsValidEmail(email string) bool {
 }
 
 var (
-	hasMinLen  = regexp.MustCompile(`.{6,}`)
-	hasUpper   = regexp.MustCompile(`[A-Z]`)
-	hasLower   = regexp.MustCompile(`[a-z]`)
-	hasNumber  = regexp.MustCompile(`[0-9]`)
+	hasMinLen = regexp.MustCompile(`.{6,}`)
+	hasUpper  = regexp.MustCompile(`[A-Z]`)
+	hasLower  = regexp.MustCompile(`[a-z]`)
+	hasNumber = regexp.MustCompile(`[0-9]`)
 )
 
 func IsValidPassword(password string) bool {

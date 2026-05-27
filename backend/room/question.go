@@ -57,7 +57,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		return
 	}
 	// check if room status is pending
-	if room.Status != database.RoomStatusPending{
+	if room.Status != database.RoomStatusPending {
 		lib.WriteError(w, http.StatusBadRequest, "Room is not pending")
 		return
 	}
@@ -78,7 +78,7 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to create question")
 		return
 	}
-	// 
+	//
 	if req.IsCode {
 		if req.Language == "" {
 			lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
@@ -146,9 +146,9 @@ func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config
 	}
 	// check if room is pending and participant has not joined the room
 	if (room.Status == database.RoomStatusPending || room.Status == database.RoomStatusCancelled) && room.OwnerID != userId {
-		var data struct{
+		var data struct {
 			Questions []database.Question `json:"questions"`
-			IsOwner bool `json:"is_owner"`
+			IsOwner   bool                `json:"is_owner"`
 		}
 		data.Questions = []database.Question{}
 		data.IsOwner = (room.OwnerID == userId)
@@ -160,13 +160,13 @@ func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get questions")
 		return
 	}
-	var data struct{
+	var data struct {
 		Questions []database.Question `json:"questions"`
-		IsOwner bool `json:"is_owner"`
+		IsOwner   bool                `json:"is_owner"`
 	}
 	if questions == nil {
 		data.Questions = []database.Question{}
-	}else{
+	} else {
 		data.Questions = questions
 	}
 	data.IsOwner = (room.OwnerID == userId)

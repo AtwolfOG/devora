@@ -25,7 +25,7 @@ type Config struct {
 	Domain             string
 	AppName            string
 	Environment        string
-	FrontendUrl 	   string
+	FrontendUrl        string
 	Database           *sql.DB
 }
 
@@ -94,7 +94,7 @@ func LoadConfig() *Config {
 	if databaseUrl == "" {
 		log.Fatal("Error loading database url")
 	}
-	
+
 	// Create database connection with proper configuration
 	db, err := sql.Open("postgres", databaseUrl)
 	if err != nil {

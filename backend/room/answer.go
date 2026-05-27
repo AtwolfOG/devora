@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing question id")
@@ -63,7 +63,7 @@ func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 	dbQueries, tx, err := cfg.NewTx(r.Context())
 	defer tx.Rollback()
 	err = dbQueries.DoneQuestion(r.Context(), database.DoneQuestionParams{
-		ID: int32(questionId),
+		ID:     int32(questionId),
 		RoomID: roomUUID,
 	})
 	if err != nil {
@@ -86,8 +86,7 @@ func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Answer saved successfully"})
 }
 
-
-func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing question id")
@@ -155,7 +154,7 @@ func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 	dbQueries, tx, err := cfg.NewTx(r.Context())
 	defer tx.Rollback()
 	err = dbQueries.DoneQuestion(r.Context(), database.DoneQuestionParams{
-		ID: int32(questionId),
+		ID:     int32(questionId),
 		RoomID: roomUUID,
 	})
 	if err != nil {

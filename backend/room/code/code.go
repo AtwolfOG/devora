@@ -11,7 +11,7 @@ import (
 )
 
 type CompileGoCodeReqquestStruct struct {
-	Code []code `json:"code"`
+	Code   []code `json:"code"`
 	RoomID string `json:"room_id"`
 }
 type code struct {

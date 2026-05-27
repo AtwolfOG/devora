@@ -63,7 +63,6 @@ func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *conf
 		return
 	}
 
-	
 	// this is to send the refresh and access token to the client
 	SendRefreshAndAccessToken(w, r, cfg, user.ID)
 }

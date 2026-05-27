@@ -11,8 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-
-func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
 		lib.WriteError(w, http.StatusBadRequest, "Failed to get user")
@@ -62,7 +61,7 @@ func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config
 	}
 
 	passRate, err := cfg.DB.GetPassRate(r.Context(), uuid.NullUUID{
-		UUID: userId,
+		UUID:  userId,
 		Valid: true,
 	})
 	if err != nil {
@@ -72,16 +71,16 @@ func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config
 	fmt.Println("pass rate", passRate)
 
 	lib.WriteJSON(w, http.StatusOK, map[string]any{
-		"total_interview_count":    totalRoomCount,
-		"upcoming_interview_count": upcomingRoomCount,
+		"total_interview_count":     totalRoomCount,
+		"upcoming_interview_count":  upcomingRoomCount,
 		"completed_interview_count": completedRoomCount,
-		"username": user.Name,
-		"user_image": user.ProfilePictureUrl,
-		"pass_rate": passRate,
+		"username":                  user.Name,
+		"user_image":                user.ProfilePictureUrl,
+		"pass_rate":                 passRate,
 	})
 }
 
-func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
 		lib.WriteError(w, http.StatusBadRequest, "Failed to get user")
@@ -95,13 +94,13 @@ func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 	}
 
 	lib.WriteJSON(w, http.StatusOK, map[string]any{
-		"username": user.Name,
-		"email": user.Email,
+		"username":            user.Name,
+		"email":               user.Email,
 		"profile_picture_url": user.ProfilePictureUrl,
 	})
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config){
+func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userIdParam := r.PathValue("user_id")
 	if userIdParam == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing user id")
@@ -119,10 +118,9 @@ func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config){
 		return
 	}
 
-
 	lib.WriteJSON(w, http.StatusOK, map[string]any{
-		"username": user.Name,
+		"username":            user.Name,
 		"profile_picture_url": user.ProfilePictureUrl,
-		"email": user.Email,
+		"email":               user.Email,
 	})
 }
