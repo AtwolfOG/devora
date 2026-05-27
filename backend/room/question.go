@@ -205,6 +205,70 @@ func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Con
 	lib.WriteJSON(w, http.StatusOK, question)
 }
 
+func PassQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	questionId := r.PathValue("question_id")
+	roomId := r.PathValue("room_id")
+	if questionId == "" || roomId == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing question id or room id")
+		return
+	}
+	questionIdInt, err := strconv.ParseInt(questionId, 10, 32)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse question id")
+		return
+	}
+	if questionIdInt <= 0 {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid question id")
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
+		return
+	}
+	err = cfg.DB.PassQuestion(r.Context(), database.PassQuestionParams{
+		ID:     int32(questionIdInt),
+		RoomID: roomUUID,
+	})
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to pass question")
+		return
+	}
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Question passed successfully"})
+}
+
+func FailQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	questionId := r.PathValue("question_id")
+	roomId := r.PathValue("room_id")
+	if questionId == "" || roomId == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing question id or room id")
+		return
+	}
+	questionIdInt, err := strconv.ParseInt(questionId, 10, 32)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse question id")
+		return
+	}
+	if questionIdInt <= 0 {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid question id")
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
+		return
+	}
+	err = cfg.DB.FailQuestion(r.Context(), database.FailQuestionParams{
+		ID:     int32(questionIdInt),
+		RoomID: roomUUID,
+	})
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to fail question")
+		return
+	}
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Question failed successfully"})
+}
+
 func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")

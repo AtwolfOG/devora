@@ -146,11 +146,17 @@ func (q *Queries) GetRoomCountByStatus(ctx context.Context, arg GetRoomCountBySt
 }
 
 const getRoomsByOwnerID = `-- name: GetRoomsByOwnerID :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE owner_id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE owner_id = $1 ORDER BY start_time ASC LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
-	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerID, ownerID)
+type GetRoomsByOwnerIDParams struct {
+	OwnerID uuid.UUID `json:"owner_id"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+func (q *Queries) GetRoomsByOwnerID(ctx context.Context, arg GetRoomsByOwnerIDParams) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerID, arg.OwnerID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -188,16 +194,23 @@ func (q *Queries) GetRoomsByOwnerID(ctx context.Context, ownerID uuid.UUID) ([]R
 }
 
 const getRoomsByOwnerIDAndStatus = `-- name: GetRoomsByOwnerIDAndStatus :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE owner_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE owner_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC LIMIT $3 OFFSET $4
 `
 
 type GetRoomsByOwnerIDAndStatusParams struct {
 	OwnerID uuid.UUID    `json:"owner_id"`
 	Column2 []RoomStatus `json:"column_2"`
+	Limit   int32        `json:"limit"`
+	Offset  int32        `json:"offset"`
 }
 
 func (q *Queries) GetRoomsByOwnerIDAndStatus(ctx context.Context, arg GetRoomsByOwnerIDAndStatusParams) ([]Room, error) {
-	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDAndStatus, arg.OwnerID, pq.Array(arg.Column2))
+	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDAndStatus,
+		arg.OwnerID,
+		pq.Array(arg.Column2),
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -235,11 +248,17 @@ func (q *Queries) GetRoomsByOwnerIDAndStatus(ctx context.Context, arg GetRoomsBy
 }
 
 const getRoomsByOwnerIDOrParticipantID = `-- name: GetRoomsByOwnerIDOrParticipantID :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE (owner_id = $1 OR participant_id = $1) ORDER BY start_time ASC
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE (owner_id = $1 OR participant_id = $1) ORDER BY start_time ASC LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) GetRoomsByOwnerIDOrParticipantID(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
-	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDOrParticipantID, ownerID)
+type GetRoomsByOwnerIDOrParticipantIDParams struct {
+	OwnerID uuid.UUID `json:"owner_id"`
+	Limit   int32     `json:"limit"`
+	Offset  int32     `json:"offset"`
+}
+
+func (q *Queries) GetRoomsByOwnerIDOrParticipantID(ctx context.Context, arg GetRoomsByOwnerIDOrParticipantIDParams) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDOrParticipantID, arg.OwnerID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -277,16 +296,23 @@ func (q *Queries) GetRoomsByOwnerIDOrParticipantID(ctx context.Context, ownerID 
 }
 
 const getRoomsByOwnerIDOrParticipantIDAndStatus = `-- name: GetRoomsByOwnerIDOrParticipantIDAndStatus :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[]) ORDER BY start_time ASC
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[]) ORDER BY start_time ASC LIMIT $3 OFFSET $4
 `
 
 type GetRoomsByOwnerIDOrParticipantIDAndStatusParams struct {
 	OwnerID uuid.UUID    `json:"owner_id"`
 	Column2 []RoomStatus `json:"column_2"`
+	Limit   int32        `json:"limit"`
+	Offset  int32        `json:"offset"`
 }
 
 func (q *Queries) GetRoomsByOwnerIDOrParticipantIDAndStatus(ctx context.Context, arg GetRoomsByOwnerIDOrParticipantIDAndStatusParams) ([]Room, error) {
-	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDOrParticipantIDAndStatus, arg.OwnerID, pq.Array(arg.Column2))
+	rows, err := q.db.QueryContext(ctx, getRoomsByOwnerIDOrParticipantIDAndStatus,
+		arg.OwnerID,
+		pq.Array(arg.Column2),
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -324,11 +350,17 @@ func (q *Queries) GetRoomsByOwnerIDOrParticipantIDAndStatus(ctx context.Context,
 }
 
 const getRoomsByParticipantID = `-- name: GetRoomsByParticipantID :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE participant_id = $1
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE participant_id = $1 ORDER BY start_time ASC LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uuid.NullUUID) ([]Room, error) {
-	rows, err := q.db.QueryContext(ctx, getRoomsByParticipantID, participantID)
+type GetRoomsByParticipantIDParams struct {
+	ParticipantID uuid.NullUUID `json:"participant_id"`
+	Limit         int32         `json:"limit"`
+	Offset        int32         `json:"offset"`
+}
+
+func (q *Queries) GetRoomsByParticipantID(ctx context.Context, arg GetRoomsByParticipantIDParams) ([]Room, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByParticipantID, arg.ParticipantID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -366,16 +398,23 @@ func (q *Queries) GetRoomsByParticipantID(ctx context.Context, participantID uui
 }
 
 const getRoomsByParticipantIDAndStatus = `-- name: GetRoomsByParticipantIDAndStatus :many
-SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE participant_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC
+SELECT id, description, owner_id, start_time, created_at, updated_at, participant_id, role, company, status, started_at, ended_at, feedback, passed FROM room WHERE participant_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC LIMIT $3 OFFSET $4
 `
 
 type GetRoomsByParticipantIDAndStatusParams struct {
 	ParticipantID uuid.NullUUID `json:"participant_id"`
 	Column2       []RoomStatus  `json:"column_2"`
+	Limit         int32         `json:"limit"`
+	Offset        int32         `json:"offset"`
 }
 
 func (q *Queries) GetRoomsByParticipantIDAndStatus(ctx context.Context, arg GetRoomsByParticipantIDAndStatusParams) ([]Room, error) {
-	rows, err := q.db.QueryContext(ctx, getRoomsByParticipantIDAndStatus, arg.ParticipantID, pq.Array(arg.Column2))
+	rows, err := q.db.QueryContext(ctx, getRoomsByParticipantIDAndStatus,
+		arg.ParticipantID,
+		pq.Array(arg.Column2),
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}

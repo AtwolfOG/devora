@@ -2,8 +2,8 @@ package room
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,7 +40,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 
-	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == ""  {
+	if req.Role == "" || req.Description == "" || req.Company == "" || req.StartTime == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing required fields")
 		return
 	}
@@ -93,16 +93,16 @@ func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
-	var data struct{
+	var data struct {
 		database.Room
-		IsOwner bool `json:"is_owner"`
+		IsOwner       bool `json:"is_owner"`
 		IsParticipant bool `json:"is_participant"`
 	}
 	data.Room = room
 	data.IsOwner = (room.OwnerID == userId)
 	if room.ParticipantID.Valid && room.ParticipantID.UUID == userId {
 		data.IsParticipant = true
-	}else{
+	} else {
 		data.IsParticipant = false
 	}
 	lib.WriteJSON(w, http.StatusOK, data)
@@ -130,30 +130,59 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			status = append(status, database.RoomStatusCancelled)
 		}
 	}
+	queryLimit := r.URL.Query().Get("limit")
+	var limit int32
+	if queryLimit == "" {
+		limit = 999
+	} else {
+		var err error
+		tmp, err := strconv.Atoi(queryLimit)
+		if err != nil {
+			lib.WriteError(w, http.StatusBadRequest, "Failed to parse limit")
+			return
+		}
+		limit = int32(tmp)
+	}
+	queryOffset := r.URL.Query().Get("offset")
+	var offset int32
+	if queryOffset == "" {
+		offset = 0
+	} else {
+		var err error
+		tmp, err := strconv.Atoi(queryOffset)
+		if err != nil {
+			lib.WriteError(w, http.StatusBadRequest, "Failed to parse offset")
+			return
+		}
+		offset = int32(tmp)
+	}
 	queryType := r.URL.Query().Get("type")
 	switch queryType {
-		case "":
-		fmt.Println("status: ", status)
+	case "":
 		if len(status) == 0 {
-			rooms, err := cfg.DB.GetRoomsByOwnerIDOrParticipantID(r.Context(), userId)
+			rooms, err := cfg.DB.GetRoomsByOwnerIDOrParticipantID(r.Context(), database.GetRoomsByOwnerIDOrParticipantIDParams{
+				OwnerID: userId,
+				Limit:   limit,
+				Offset:  offset,
+			})
 			if err != nil {
 				lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
 				return
 			}
 			// add is_owner and is_participant to the response
-			var data []struct{
+			var data []struct {
 				database.Room
-				IsOwner bool `json:"is_owner"`
+				IsOwner       bool `json:"is_owner"`
 				IsParticipant bool `json:"is_participant"`
 			}
 			for _, room := range rooms {
-				data = append(data, struct{
+				data = append(data, struct {
 					database.Room
-					IsOwner bool `json:"is_owner"`
+					IsOwner       bool `json:"is_owner"`
 					IsParticipant bool `json:"is_participant"`
 				}{
-					Room:        room,
-					IsOwner:     room.OwnerID == userId,
+					Room:          room,
+					IsOwner:       room.OwnerID == userId,
 					IsParticipant: room.OwnerID != userId,
 				})
 			}
@@ -162,6 +191,8 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		}
 		rooms, err := cfg.DB.GetRoomsByOwnerIDOrParticipantIDAndStatus(r.Context(), database.GetRoomsByOwnerIDOrParticipantIDAndStatusParams{
 			OwnerID: userId,
+			Limit:   limit,
+			Offset:  offset,
 			Column2: status,
 		})
 		if err != nil {
@@ -169,27 +200,31 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			return
 		}
 		// add is_owner and is_participant to the response
-			var data []struct{
+		var data []struct {
+			database.Room
+			IsOwner       bool `json:"is_owner"`
+			IsParticipant bool `json:"is_participant"`
+		}
+		for _, room := range rooms {
+			data = append(data, struct {
 				database.Room
-				IsOwner bool `json:"is_owner"`
+				IsOwner       bool `json:"is_owner"`
 				IsParticipant bool `json:"is_participant"`
-			}
-			for _, room := range rooms {
-				data = append(data, struct{
-					database.Room
-					IsOwner bool `json:"is_owner"`
-					IsParticipant bool `json:"is_participant"`
-				}{
-					Room:        room,
-					IsOwner:     room.OwnerID == userId,
-					IsParticipant: room.OwnerID != userId,
-				})
-			}
-			lib.WriteJSON(w, http.StatusOK, data)
+			}{
+				Room:          room,
+				IsOwner:       room.OwnerID == userId,
+				IsParticipant: room.OwnerID != userId,
+			})
+		}
+		lib.WriteJSON(w, http.StatusOK, data)
 		return
-		case "owner":
+	case "owner":
 		if len(status) == 0 {
-			rooms, err := cfg.DB.GetRoomsByOwnerID(r.Context(), userId)
+			rooms, err := cfg.DB.GetRoomsByOwnerID(r.Context(), database.GetRoomsByOwnerIDParams{
+				OwnerID: userId,
+				Limit:   limit,
+				Offset:  offset,
+			})
 			if err != nil {
 				lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
 				return
@@ -199,6 +234,8 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		}
 		rooms, err := cfg.DB.GetRoomsByOwnerIDAndStatus(r.Context(), database.GetRoomsByOwnerIDAndStatusParams{
 			OwnerID: userId,
+			Limit:   limit,
+			Offset:  offset,
 			Column2: status,
 		})
 		if err != nil {
@@ -207,9 +244,13 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		}
 		lib.WriteJSON(w, http.StatusOK, rooms)
 		return
-		case "participant":
+	case "participant":
 		if len(status) == 0 {
-			rooms, err := cfg.DB.GetRoomsByParticipantID(r.Context(), uuid.NullUUID{UUID: userId, Valid: true})
+			rooms, err := cfg.DB.GetRoomsByParticipantID(r.Context(), database.GetRoomsByParticipantIDParams{
+				ParticipantID: uuid.NullUUID{UUID: userId, Valid: true},
+				Limit:         limit,
+				Offset:        offset,
+			})
 			if err != nil {
 				lib.WriteError(w, http.StatusInternalServerError, "Failed to get rooms")
 				return
@@ -219,6 +260,8 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		}
 		rooms, err := cfg.DB.GetRoomsByParticipantIDAndStatus(r.Context(), database.GetRoomsByParticipantIDAndStatusParams{
 			ParticipantID: uuid.NullUUID{UUID: userId, Valid: true},
+			Limit:         limit,
+			Offset:        offset,
 			Column2:       status,
 		})
 		if err != nil {
@@ -304,7 +347,7 @@ func AddParticipantToRoom(w http.ResponseWriter, r *http.Request, cfg *config.Co
 		lib.WriteError(w, http.StatusUnauthorized, "You are the owner of this room")
 		return
 	}
-	
+
 	if room.ParticipantID.Valid {
 		lib.WriteError(w, http.StatusUnauthorized, "You are already a participant of this room")
 		return
@@ -499,7 +542,7 @@ func RescheduleRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 		lib.WriteError(w, http.StatusBadRequest, "Room is not pending")
 		return
 	}
-	var req struct{
+	var req struct {
 		StartTime string `json:"start_time"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&req)

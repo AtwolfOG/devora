@@ -2,7 +2,9 @@
 ALTER TABLE questions ADD COLUMN answer TEXT;
 ALTER TABLE questions ADD COLUMN title TEXT NOT NULL;
 ALTER TABLE questions ADD COLUMN description TEXT NOT NULL;
+
 ALTER TABLE questions DROP COLUMN question;
+
 ALTER TABLE questions ADD COLUMN is_code BOOLEAN DEFAULT FALSE NOT NULL;
 
 -- +goose Down

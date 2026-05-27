@@ -48,6 +48,34 @@ func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) 
 	return err
 }
 
+const doneQuestion = `-- name: DoneQuestion :exec
+UPDATE questions SET done = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND room_id = $2
+`
+
+type DoneQuestionParams struct {
+	ID     int32     `json:"id"`
+	RoomID uuid.UUID `json:"room_id"`
+}
+
+func (q *Queries) DoneQuestion(ctx context.Context, arg DoneQuestionParams) error {
+	_, err := q.db.ExecContext(ctx, doneQuestion, arg.ID, arg.RoomID)
+	return err
+}
+
+const failQuestion = `-- name: FailQuestion :exec
+UPDATE questions SET passed = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND room_id = $2
+`
+
+type FailQuestionParams struct {
+	ID     int32     `json:"id"`
+	RoomID uuid.UUID `json:"room_id"`
+}
+
+func (q *Queries) FailQuestion(ctx context.Context, arg FailQuestionParams) error {
+	_, err := q.db.ExecContext(ctx, failQuestion, arg.ID, arg.RoomID)
+	return err
+}
+
 const getQuestionByID = `-- name: GetQuestionByID :one
 SELECT id, room_id, done, passed, created_at, updated_at, title, description, is_code FROM questions WHERE id = $1 AND room_id = $2
 `
@@ -146,6 +174,20 @@ func (q *Queries) ListQuestions(ctx context.Context, roomID uuid.UUID) ([]Questi
 		return nil, err
 	}
 	return items, nil
+}
+
+const passQuestion = `-- name: PassQuestion :exec
+UPDATE questions SET passed = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND room_id = $2
+`
+
+type PassQuestionParams struct {
+	ID     int32     `json:"id"`
+	RoomID uuid.UUID `json:"room_id"`
+}
+
+func (q *Queries) PassQuestion(ctx context.Context, arg PassQuestionParams) error {
+	_, err := q.db.ExecContext(ctx, passQuestion, arg.ID, arg.RoomID)
+	return err
 }
 
 const updateQuestion = `-- name: UpdateQuestion :exec

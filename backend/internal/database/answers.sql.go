@@ -14,6 +14,10 @@ import (
 const createAnswer = `-- name: CreateAnswer :exec
 INSERT INTO answers (question_id, room_id, answer)
 VALUES ($1, $2, $3)
+ON CONFLICT (question_id, room_id)
+DO UPDATE SET
+    answer = $3,
+    updated_at = CURRENT_TIMESTAMP
 `
 
 type CreateAnswerParams struct {

@@ -4,6 +4,15 @@ INSERT INTO questions (room_id, title, description, is_code) VALUES ($1, $2, $3,
 -- name: GetQuestionByID :one
 SELECT * FROM questions WHERE id = $1 AND room_id = $2;
 
+-- name: PassQuestion :exec
+UPDATE questions SET passed = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND room_id = $2;
+
+-- name: FailQuestion :exec
+UPDATE questions SET passed = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND room_id = $2;
+
+-- name: DoneQuestion :exec
+UPDATE questions SET done = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND room_id = $2;
+
 -- name: GetQuestionsByRoomID :many
 SELECT * FROM questions WHERE room_id = $1;
 

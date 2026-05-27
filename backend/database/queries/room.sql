@@ -2,22 +2,22 @@
 SELECT * FROM room WHERE id = $1;
 
 -- name: GetRoomsByOwnerID :many
-SELECT * FROM room WHERE owner_id = $1;
+SELECT * FROM room WHERE owner_id = $1 ORDER BY start_time ASC LIMIT $2 OFFSET $3;
 
 -- name: GetRoomsByParticipantID :many
-SELECT * FROM room WHERE participant_id = $1;
+SELECT * FROM room WHERE participant_id = $1 ORDER BY start_time ASC LIMIT $2 OFFSET $3;
 
 -- name: GetRoomsByOwnerIDAndStatus :many
-SELECT * FROM room WHERE owner_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC;
+SELECT * FROM room WHERE owner_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC LIMIT $3 OFFSET $4;
 
 -- name: GetRoomsByParticipantIDAndStatus :many
-SELECT * FROM room WHERE participant_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC;
+SELECT * FROM room WHERE participant_id = $1 AND status = ANY($2::room_status[]) ORDER BY start_time ASC LIMIT $3 OFFSET $4;
 
 -- name: GetRoomsByOwnerIDOrParticipantIDAndStatus :many
-SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[]) ORDER BY start_time ASC;
+SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[]) ORDER BY start_time ASC LIMIT $3 OFFSET $4;
 
 -- name: GetRoomsByOwnerIDOrParticipantID :many
-SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1) ORDER BY start_time ASC;
+SELECT * FROM room WHERE (owner_id = $1 OR participant_id = $1) ORDER BY start_time ASC LIMIT $2 OFFSET $3;
 
 -- name: GetRoomCountByStatus :one
 SELECT COUNT(*) FROM room WHERE (owner_id = $1 OR participant_id = $1) AND status = ANY($2::room_status[]);

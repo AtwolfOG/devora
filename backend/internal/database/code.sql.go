@@ -7,24 +7,32 @@ package database
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createCode = `-- name: CreateCode :exec
-INSERT INTO code_snippets (name, question_id, code, language)
-VALUES ($1, $2, $3, $4)
+INSERT INTO code_snippets (name, question_id, room_id, code, language)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (name, question_id, room_id)
+DO UPDATE SET
+    code = $4,
+    updated_at = CURRENT_TIMESTAMP
 `
 
 type CreateCodeParams struct {
-	Name       string   `json:"name"`
-	QuestionID int32    `json:"question_id"`
-	Code       string   `json:"code"`
-	Language   Language `json:"language"`
+	Name       string    `json:"name"`
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
+	Code       string    `json:"code"`
+	Language   Language  `json:"language"`
 }
 
 func (q *Queries) CreateCode(ctx context.Context, arg CreateCodeParams) error {
 	_, err := q.db.ExecContext(ctx, createCode,
 		arg.Name,
 		arg.QuestionID,
+		arg.RoomID,
 		arg.Code,
 		arg.Language,
 	)
@@ -45,17 +53,18 @@ func (q *Queries) DeleteCode(ctx context.Context, arg DeleteCodeParams) error {
 	return err
 }
 
-const getCode = `-- name: GetCode :one
-SELECT name, question_id, room_id, code, language, created_at, updated_at FROM code_snippets WHERE name = $1 AND question_id = $2
+const getCodeBy = `-- name: GetCodeBy :one
+SELECT name, question_id, room_id, code, language, created_at, updated_at FROM code_snippets WHERE name = $1 AND question_id = $2 AND room_id = $3
 `
 
-type GetCodeParams struct {
-	Name       string `json:"name"`
-	QuestionID int32  `json:"question_id"`
+type GetCodeByParams struct {
+	Name       string    `json:"name"`
+	QuestionID int32     `json:"question_id"`
+	RoomID     uuid.UUID `json:"room_id"`
 }
 
-func (q *Queries) GetCode(ctx context.Context, arg GetCodeParams) (CodeSnippet, error) {
-	row := q.db.QueryRowContext(ctx, getCode, arg.Name, arg.QuestionID)
+func (q *Queries) GetCodeBy(ctx context.Context, arg GetCodeByParams) (CodeSnippet, error) {
+	row := q.db.QueryRowContext(ctx, getCodeBy, arg.Name, arg.QuestionID, arg.RoomID)
 	var i CodeSnippet
 	err := row.Scan(
 		&i.Name,
@@ -107,7 +116,7 @@ func (q *Queries) ListCodes(ctx context.Context, questionID int32) ([]CodeSnippe
 const updateCode = `-- name: UpdateCode :one
 UPDATE code_snippets
 SET code = $3, updated_at = CURRENT_TIMESTAMP
-WHERE name = $1 AND question_id = $2
+WHERE name = $1 AND question_id = $2 AND room_id = $3
 RETURNING name, question_id, room_id, code, language, created_at, updated_at
 `
 
