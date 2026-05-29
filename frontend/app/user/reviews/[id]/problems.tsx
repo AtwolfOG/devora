@@ -1,4 +1,5 @@
 "use client"
+import customToast from "@/components/customToast";
 import { DialogContent, DialogHeader, Dialog, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
@@ -7,18 +8,30 @@ import { Editor } from "@monaco-editor/react";
 import { CheckCircle, Circle, Ellipsis, FileCode, Loader2, TextIcon, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export type problemType = {
-    id: string;
-    title: string;
-    description: string;
-    type: string;
-    code?: string;
-    lang?: string;
-    answer?: string
-    pass?: boolean | null;
-}
-export function Problems({problems}:{problems: Question[]}){
-    // const 
+export function Problems({id, isOwner}:{id: string, isOwner: boolean}){
+    const [problems, setProblems] = useState<Question[]>([])
+    const [loading, setLoading] = useState(true)
+    const [err, setErr] = useState(false)
+    const fetchProblems = async () => {
+        try {
+            setLoading(true)
+            setErr(false)
+            const res = await api.get(`/rooms/${id}/problems`)
+            setProblems(res.data)
+        } catch (error) {
+            setErr(true)
+        } finally {
+            setLoading(false)
+        }
+    }
+    useEffect(() => {
+        fetchProblems()
+    }, [id])
+    if (loading) return <Loader2 className="animate-spin" />
+    if (err) return <div className="flex flex-col items-center gap-2">
+        <p className="text-center text-(--text-secondary)">Error fetching problems</p>
+        <p onClick={fetchProblems} className="text-(--text-secondary) hover:underline cursor-pointer">Retry</p>
+    </div>
     return(
 
         <div className="my-6 bg-(--bg-muted)/60 border-(--border) border rounded-lg p-6">
@@ -62,6 +75,7 @@ export function Problems({problems}:{problems: Question[]}){
                             <p className="text-(--text-secondary) text-sm!">{problem.description}</p>
                         </div>
                         {
+                            isOwner &&
                             problem.is_code?
                             <ReviewCodeProblemModal roomID={problem.room_id} problemID={problem.id} title={problem.title} description={problem.description} />
                             :
@@ -117,8 +131,8 @@ function ReviewCodeProblemModal({roomID, problemID, title, description}: {roomID
                             <p>{description}</p>
                         </div>
                         <div className="flex items-center gap-2 mt-8">
-                            <button type="submit" className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg">Pass</button>
-                            <button className="hover:bg-(--destructive)/10 text-(--destructive) border border-(--destructive)/20 px-4 py-2 rounded-lg">Fail</button>
+                            <button type="submit" className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg" onClick={() => PassOrFailProblem(problemID, roomID, true)}>Pass</button>
+                            <button className="hover:bg-(--destructive)/10 text-(--destructive) border border-(--destructive)/20 px-4 py-2 rounded-lg" onClick={() => PassOrFailProblem(problemID, roomID, false)}>Fail</button>
                         </div>
                     </div>
                         <Editor options={{minimap: {enabled: false}, scrollBeyondLastLine: false, lineNumbers: "off"}} className="flex-1 h-full min-h-[320px] w-full min-w-[320px]"  defaultLanguage={"javascript"} language={data?.language} value={data?.code} theme="vs-dark" />
@@ -174,8 +188,8 @@ function ReviewTextProblemModal({roomID, problemID, title, description}: {roomID
                             {data ? <p className="text-(--text-secondary)">{data.answer}</p> : <p className="text-(--text-secondary)">No answer submitted</p>}
                         </div>
                         <div className="flex items-center gap-2 mt-8">
-                            <button type="submit" className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg">Pass</button>
-                            <button className="hover:bg-(--destructive)/10 text-(--destructive) border border-(--destructive)/20 px-4 py-2 rounded-lg">Fail</button>
+                            <button type="submit" className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg" onClick={() => PassOrFailProblem(problemID, roomID, true)}>Pass</button>
+                            <button className="hover:bg-(--destructive)/10 text-(--destructive) border border-(--destructive)/20 px-4 py-2 rounded-lg" onClick={() => PassOrFailProblem(problemID, roomID, false)}>Fail</button>
                         </div>
                     </div>
                 </div>
@@ -186,15 +200,16 @@ function ReviewTextProblemModal({roomID, problemID, title, description}: {roomID
     )
 }
 
-async function PassFailProblemModal(problemID: string, roomID: string, pass: boolean){
+async function PassOrFailProblem(problemID: string, roomID: string, pass: boolean){
     try{
         if(pass){
             await api.patch(`/rooms/${roomID}/questions/${problemID}/pass`)
         }else{
             await api.patch(`/rooms/${roomID}/questions/${problemID}/fail`)
         }
+        customToast.success("Problem updated successfully")
     }
     catch (err){
-        // custom
+        customToast.error("Failed to update problem")
     }
 }

@@ -1,45 +1,55 @@
+"use client"
 import { StatusBtn } from "@/components/statusBtn";
-import {Problems, type problemType} from "./problems"
-import Feedback from "./feedback";
+import {Problems} from "./problems"
+import FeedbackForm from "./feedback";
+import { Room } from "@/lib/types";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
-const testData: problemType[] = [
-    {
-        id: "1",
-        title: "Two Sum",
-        description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-        type: "code",
-        lang: "javascript",
-        code: `// write your boilerplate code for the answer here
-function main() {
-    
-}`
-    },
-    {
-        id: "2",
-        title: "Reverse String",
-        description: "Write a function that reverses a string.",
-        type: "text",
-        answer: "This is the answer to this question, I hope this is answer was meaningful my lordship, azula op",
-        pass: false
-    },
-    {
-        id: "3",
-        title: "FizzBuzz",
-        description: "Write a function that prints numbers from 1 to n. For multiples of 3, print \"Fizz\", for multiples of 5, print \"Buzz\", and for multiples of both, print \"FizzBuzz\".",
-        type: "code",
-        lang: "python",
-        code: `# write your boilerplate code for the answer here
-def main():
-    `,
-    pass: true
-    }
-]
+type Interview = Room & {
+    is_owner: boolean;
+    is_participant: boolean;
+}
 export default function Page() {
+    const [interview, setInterview] = useState<Interview | null>(null)
+    const [loading, setLoading] = useState(false)
+    const [ err, setErr] = useState<string | null>(null)
+    const { id } = useParams()
+    const router = useRouter()
+    const fetchInterview = async () => {
+        try {
+            setLoading(true)
+            const res = await api.get<Interview>(`/rooms/${id}`)
+            setInterview(res.data)
+        } catch (error) {
+            setErr("Error fetching interview")
+        } finally {
+            setLoading(false)
+        }
+    }
+    useEffect(() => {
+        fetchInterview()
+    }, [id])
+    if (loading) return <Loader2 className="animate-spin" />
+    if (err) return <div className="flex flex-col items-center gap-2">
+        <p className="text-center text-(--text-secondary)">Error fetching interview</p>
+        <p onClick={fetchInterview} className="text-(--text-secondary) hover:underline cursor-pointer">Retry</p>
+    </div>
+    if (!interview) return <div className="flex flex-col items-center gap-2">
+        <p className="text-center text-(--text-secondary)">Interview not found</p>
+        <p onClick={() => router.push("/user/reviews")} className="text-(--text-secondary) hover:underline cursor-pointer">Go back</p>
+    </div>  
+    if (!interview.is_owner && !interview.is_participant) return <div className="flex flex-col items-center gap-2">
+        <p className="text-center text-(--text-secondary)">You are not authorized to view this interview</p>
+        <p onClick={() => router.push("/user/reviews")} className="text-(--text-secondary) hover:underline cursor-pointer">Go back</p>
+    </div>
     return(
-        <main>
+        <main className="flex flex-col">
             <header className="flex items-center gap-4">
                 <div>
-                    <h3 className="text-(--text-primary) text-3xl!">Senior Backend Engineer Interview</h3>
+                    <h3 className="text-(--text-primary) text-3xl!">{interview.title}</h3>
                     <p className="text-sm!">Manage all interview sessions in one place</p>
                 </div>
                 <StatusBtn className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60">Completed</StatusBtn>
@@ -54,8 +64,8 @@ export default function Page() {
                 referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
                 <p className="text-sm! text-(--text-secondary)">For the mean time youtube will be used to store your interview&apos;s recording. Don&apos;t worry they are protected and can&apos;t be viewed by another user except you share this review link</p>
             </div>
-            <Problems problems={testData} />
-            <Feedback/>
+            <Problems id={id as string} isOwner={interview.is_owner} />
+            <FeedbackForm feedback={interview.feedback} isOwner={interview.is_owner} />
         </main>
     )
 }
