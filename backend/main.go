@@ -80,6 +80,7 @@ func main() {
 	roomRouter.Patch("/{room_id}/leave", configWrapper(config, room.RemoveParticipantFromRoom))
 	roomRouter.Patch("/{room_id}/cancel", configWrapper(config, room.CancelRoom))
 	roomRouter.Patch("/{room_id}/reschedule", configWrapper(config, room.RescheduleRoom))
+	roomRouter.Patch("/{room_id}/submit-feedback", configWrapper(config, room.SubmitFeedback))
 	roomRouter.Post("/{room_id}/questions", configWrapper(config, room.CreateQuestion))
 	roomRouter.Get("/{room_id}/questions", configWrapper(config, room.GetRoomQuestions))
 	roomRouter.Post("/{room_id}/questions/{question_id}/answer", configWrapper(config, room.SubmitAnswer))

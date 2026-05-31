@@ -52,5 +52,8 @@ UPDATE room SET participant_id = NULL WHERE id = $1;
 -- name: RescheduleRoom :exec
 UPDATE room SET start_time = $2, status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND owner_id = $3 AND status = 'cancelled';
 
+-- name: SubmitFeedback :exec
+UPDATE room SET feedback = $1, passed = $2, status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND status = 'reviewing' AND owner_id = $4;
+
 -- name: ListRooms :many
 SELECT * FROM room;

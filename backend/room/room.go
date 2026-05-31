@@ -1,6 +1,7 @@
 package room
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -575,42 +576,60 @@ func RescheduleRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room rescheduled successfully"})
 }
 
-// func PassRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
-// 	userId, err := auth.GetIdFromReqCtx(r)
-// 	if err != nil {
-// 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
-// 		return
-// 	}
-// 	roomId := r.PathValue("room_id")
-// 	if roomId == "" {
-// 		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
-// 		return
-// 	}
-// 	roomUUID, err := uuid.Parse(roomId)
-// 	if err != nil {
-// 		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
-// 		return
-// 	}
-// 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
-// 	if err != nil {
-// 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
-// 		return
-// 	}
-// 	if room.OwnerID != userId {
-// 		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner of this room")
-// 		return
-// 	}
-// 	if room.Status != database.RoomStatusReviewing {
-// 		lib.WriteError(w, http.StatusBadRequest, "Room is not reviewing")
-// 		return
-// 	}
-// 	err = cfg.DB.PassRoom(r.Context(), database.PassRoomParams{
-// 		ID:      roomUUID,
-// 		OwnerID: userId,
-// 	})
-// 	if err != nil {
-// 		lib.WriteError(w, http.StatusInternalServerError, "Failed to pass room")
-// 		return
-// 	}
-// 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room passed successfully"})
-// }
+func SubmitFeedback(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	userId, err := auth.GetIdFromReqCtx(r)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
+		return
+	}
+	roomId := r.PathValue("room_id")
+	if roomId == "" {
+		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
+		return
+	}
+	roomUUID, err := uuid.Parse(roomId)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
+		return
+	}
+	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		return
+	}
+	if room.OwnerID != userId {
+		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner of this room")
+		return
+	}
+	if room.Status != database.RoomStatusReviewing {
+		lib.WriteError(w, http.StatusBadRequest, "Room is not reviewing")
+		return
+	}
+	var req struct {
+		Feedback string `json:"feedback"`
+		Passed   bool   `json:"passed"`
+	}
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to parse request")
+		return
+	}
+	feedback := sql.NullString{
+		String: req.Feedback,
+		Valid:  req.Feedback != "",
+	}
+	err = cfg.DB.SubmitFeedback(r.Context(), database.SubmitFeedbackParams{
+		ID:       roomUUID,
+		OwnerID:  userId,
+		Feedback: feedback,
+		Passed: sql.NullBool{
+			Bool:  req.Passed,
+			Valid: true,
+		},
+	})
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to submit feedback")
+		return
+	}
+	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Feedback submitted successfully"})
+}
