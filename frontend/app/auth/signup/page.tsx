@@ -123,7 +123,6 @@ async function handleSignUp(data: SignUpForm, e?: BaseSyntheticEvent) {
 			customToast.error(msg)
 		}
 		else {
-			console.log("error: ", err);
 			customToast.error("An error occurred")
 		}
 	}
@@ -132,7 +131,7 @@ async function handleSignUp(data: SignUpForm, e?: BaseSyntheticEvent) {
 async function handleGoogle(setLoadingLink: (loading: boolean) => void) {
 	setLoadingLink(true)
 	try {
-		const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/link/google`);
+		const res = await api.get(`/auth/link/google`);
 		const url = res.data.url
 		customToast.success("You should be redirected soon")
 		window.location.href = url
@@ -152,19 +151,17 @@ async function handleGoogle(setLoadingLink: (loading: boolean) => void) {
 async function handleGithub(setLoadingLink: (loading: boolean) => void) {
 	setLoadingLink(true)
 	try {
-		const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/link/github`);
+		const res = await api.get(`/auth/link/github`);
 		const url = res.data.url
 		customToast.success("You should be redirected soon")
 		window.location.href = url
 	}
 	catch (err) {
 		if (axios.isAxiosError(err)) {
-			console.log(err.response)
 			const msg = err.response?.data.error || "An error occurred"
 			customToast.error(msg)
 		}
 		else {
-			console.log("error: ", err);
 			customToast.error("An error occurred")
 		}
 	}

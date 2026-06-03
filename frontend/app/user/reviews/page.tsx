@@ -18,15 +18,6 @@ type interviewType = Room & {
     is_participant: boolean;
 }
 
-type Review = {
-    id: string;
-    role: string;
-    status: string;
-    candidate: string;
-    interviewer: string;
-    company: string;
-    started_at: string;
-}
 
 export default function ReviewsPage() {
     const router = useRouter();
@@ -105,6 +96,8 @@ export default function ReviewsPage() {
              <div className="my-6">
                 {loading ? (
                     <div className="w-full flex items-center justify-center">Loading...</div>
+                ) : (!interviews || interviews.length === 0) ? (
+                    <div className="w-full flex items-center justify-center">No reviews yet</div>
                 ) : (
                     <div className="my-4">
                     <Table className="border border-(--border)">

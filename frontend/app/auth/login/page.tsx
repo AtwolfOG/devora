@@ -85,7 +85,6 @@ async function handleLogin(data: LoginForm, e?: BaseSyntheticEvent) {
             customToast.error(msg)
         }
         else {
-            console.log("error: ", err);
             customToast.error("An error occurred")
         }
     }
