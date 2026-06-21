@@ -205,7 +205,7 @@ func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		QuestionID: int32(questionId),
 		RoomID:     roomUUID,
 	})
-	if err == sql.ErrNoRows{
+	if err == sql.ErrNoRows {
 		return
 	}
 	if err != nil {

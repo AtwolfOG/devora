@@ -138,7 +138,7 @@ func GetSettings(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user")
 		return
 	}
-	
+
 	type oauthProviders struct {
 		CreatedAt time.Time `json:"created_at"`
 		Provider  string    `json:"provider"`
