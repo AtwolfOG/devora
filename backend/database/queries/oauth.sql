@@ -29,7 +29,7 @@ JOIN oauth o ON u.id = o.user_id
 WHERE o.provider = $1 AND o.provider_id = $2 AND u.verified = TRUE;
 
 -- name: GetOauthProvidersByUserId :many
-SELECT provider, provider_id, email FROM oauth WHERE user_id = $1;
+SELECT provider, provider_id, email, created_at, updated_at FROM oauth WHERE user_id = $1;
 
 -- name: GetOauthEmailByProviderId :one
 SELECT email FROM oauth WHERE provider = $1 AND provider_id = $2;

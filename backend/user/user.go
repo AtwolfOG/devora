@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
@@ -123,4 +124,34 @@ func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		"profile_picture_url": user.ProfilePictureUrl,
 		"email":               user.Email,
 	})
+}
+
+func GetSettings(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	userId, err := auth.GetIdFromReqCtx(r)
+	if err != nil {
+		lib.WriteError(w, http.StatusBadRequest, "Failed to get user")
+		return
+	}
+
+	userOauthProviders, err := cfg.DB.GetOauthProvidersByUserId(r.Context(), userId)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user")
+		return
+	}
+	
+	type oauthProviders struct {
+		CreatedAt time.Time `json:"created_at"`
+		Provider  string    `json:"provider"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+	var oauthProvidersMap = make(map[string]oauthProviders)
+	for _, oauthProvider := range userOauthProviders {
+		oauthProvidersMap[string(oauthProvider.Provider)] = oauthProviders{
+			CreatedAt: oauthProvider.CreatedAt,
+			Provider:  string(oauthProvider.Provider),
+			UpdatedAt: oauthProvider.UpdatedAt,
+		}
+	}
+
+	lib.WriteJSON(w, http.StatusOK, oauthProvidersMap)
 }

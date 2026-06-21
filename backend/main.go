@@ -68,6 +68,7 @@ func main() {
 	userRouter.Get("/profile", configWrapper(config, user.GetUserData))
 	userRouter.Get("/dashboard", configWrapper(config, user.GetDashboardStat))
 	userRouter.Get("/{user_id}", configWrapper(config, user.GetUser))
+	userRouter.Get("/settings", configWrapper(config, user.GetSettings))
 	apiRouter.Mount("/users", userRouter)
 	// this is the room api
 	roomRouter := chi.NewRouter()

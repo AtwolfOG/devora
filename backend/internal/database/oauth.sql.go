@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -153,13 +154,15 @@ func (q *Queries) GetOauthEmailByProviderId(ctx context.Context, arg GetOauthEma
 }
 
 const getOauthProvidersByUserId = `-- name: GetOauthProvidersByUserId :many
-SELECT provider, provider_id, email FROM oauth WHERE user_id = $1
+SELECT provider, provider_id, email, created_at, updated_at FROM oauth WHERE user_id = $1
 `
 
 type GetOauthProvidersByUserIdRow struct {
 	Provider   OauthProvider  `json:"provider"`
 	ProviderID sql.NullString `json:"provider_id"`
 	Email      string         `json:"email"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
 }
 
 func (q *Queries) GetOauthProvidersByUserId(ctx context.Context, userID uuid.UUID) ([]GetOauthProvidersByUserIdRow, error) {
@@ -171,7 +174,13 @@ func (q *Queries) GetOauthProvidersByUserId(ctx context.Context, userID uuid.UUI
 	var items []GetOauthProvidersByUserIdRow
 	for rows.Next() {
 		var i GetOauthProvidersByUserIdRow
-		if err := rows.Scan(&i.Provider, &i.ProviderID, &i.Email); err != nil {
+		if err := rows.Scan(
+			&i.Provider,
+			&i.ProviderID,
+			&i.Email,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
