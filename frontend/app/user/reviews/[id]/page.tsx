@@ -49,7 +49,7 @@ export default function Page() {
         <main className="flex flex-col">
             <header className="flex items-center gap-4">
                 <div>
-                    <h3 className="text-(--text-primary) text-3xl!">{interview.title}</h3>
+                    <h3 className="text-(--text-primary) text-3xl!">{interview.role} Interview</h3>
                     <p className="text-sm!">Manage all interview sessions in one place</p>
                 </div>
                 <StatusBtn className="bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60">Completed</StatusBtn>
@@ -65,7 +65,7 @@ export default function Page() {
                 <p className="text-sm! text-(--text-secondary)">For the mean time youtube will be used to store your interview&apos;s recording. Don&apos;t worry they are protected and can&apos;t be viewed by another user except you share this review link</p>
             </div>
             <Problems id={id as string} isOwner={interview.is_owner} />
-            <FeedbackForm feedback={interview.feedback} isOwner={interview.is_owner} />
+            <FeedbackForm feedback={interview.feedback.String} isOwner={interview.is_owner} />
         </main>
     )
 }

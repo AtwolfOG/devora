@@ -30,14 +30,6 @@
   --raleway: var(--raleway);
 }
 
-/* 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
-
 @media (max-width: 768px) {
   :root {
     font-size: 14px;
@@ -92,27 +84,31 @@ h4 {
 
 h5 {
   font-size: 1.3rem;
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   color: hsl(from var(--text) h s 85%);
 }
 
 h6,
 th {
   font-size: 1.1rem;
-  font-weight: 400;
+  font-weight: 100;
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   color: hsl(from var(--text) h s 85%);
 }
 
 p,
+span,
+label,
+input,
+textarea,
 td {
   font-size: 1rem;
-  font-weight: 400;
+  font-weight: 100;
   line-height: 1.5;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   color: hsl(from var(--text) h s 80%);
 }
 
@@ -212,4 +208,23 @@ textarea {
   border: 1px solid var(--border);
   border-radius: .5rem;
   outline: none;
+}
+
+.underline-anim{
+  position: relative;
+}
+
+.underline-anim::after{
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: currentColor;
+  transition: width 0.1s ease-in-out;
+}
+
+.underline-anim:hover::after{
+  width: 100%;
 }

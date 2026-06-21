@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-import { Space_Grotesk  } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { space_grotesk, helvetica_neue } from "@/app/fonts";
 
-
-const space_grotesk  = Space_Grotesk ({
-  variable: "--space_grotesk ",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -23,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${space_grotesk.variable} ${space_grotesk.className} antialiased`}
+        className={`${space_grotesk.variable} ${space_grotesk.className} ${helvetica_neue.variable} ${helvetica_neue.className} antialiased`}
       >
         <TooltipProvider>
           {children}

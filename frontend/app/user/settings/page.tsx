@@ -1,3 +1,5 @@
+import Billing from "./billing";
+import OAuth from "./oauth";
 import UserDetails from "./userDetails";
 
 export default function SettingsPage() {
@@ -7,6 +9,8 @@ export default function SettingsPage() {
           <p>Manage your account settings</p>
           <div>
            <UserDetails/>
+           <OAuth google={true} github={false} password={true}/>
+           <Billing />
           </div>
         </div>
     )

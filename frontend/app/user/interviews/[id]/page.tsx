@@ -92,12 +92,12 @@ function Invite({isOwner, participantId}:{
     const [error, setError] = useState(false)
     const [participant, setParticipant] = useState<any>(null)
     const fetchParticipant = async () => {
-        if (participantId == null || !participantId.Valid)  {
+        if (participantId == null || participantId == "")  {
             return
         }
         try {
             setLoading(true)
-            const response = await api.get<User>(`/api/users/${participantId.UUID}`)
+            const response = await api.get<User>(`/api/users/${participantId}`)
             setParticipant(response.data)
         } catch (error) {
             setError(true)

@@ -19,7 +19,7 @@ export default function GithubCallbackPage() {
                     throw new Error("Failed to login with github")
                 }
                 customToast.success("Logged in with github successfully")
-                router.push("/home")
+                router.push("/user/dashboard")
             }).catch((err) => {
                 if (axios.isAxiosError(err)) {
                     customToast.error(err.response?.data?.error || "Failed to login with github")

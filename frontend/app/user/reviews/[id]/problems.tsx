@@ -200,7 +200,7 @@ function ReviewTextProblemModal({roomID, problemID, title, description}: {roomID
     )
 }
 
-async function PassOrFailProblem(problemID: string, roomID: string, pass: boolean){
+async function PassOrFailProblem(problemID: number, roomID: string, pass: boolean){
     try{
         if(pass){
             await api.patch(`/rooms/${roomID}/questions/${problemID}/pass`)
