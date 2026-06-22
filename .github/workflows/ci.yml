@@ -19,22 +19,18 @@ jobs:
               run: |
                 cd backend
                 go mod download
-                cd ..
             - name: Format
               run: |
                 cd backend
-                test -z $(go fmt ./...)
-                cd ..
+                test -z "$(go fmt ./...)"
             - name: Install staticcheck
               run: |
                 cd backend
                 go install honnef.co/go/tools/cmd/staticcheck@latest
-                cd ..
             - name: Lint
               run: |
                 cd backend
                 staticcheck ./...
-                cd ..
     test:
         runs-on: ubuntu-latest
         steps:
@@ -47,22 +43,18 @@ jobs:
               run: |
                 cd backend
                 go mod tidy
-                cd ..
             - name: Test
               run: |
                 cd backend
                 go test ./...
-                cd ..
             - name: Install gosec
               run: |
                 cd backend
                 go install github.com/securego/gosec/v2/cmd/gosec@latest
-                cd ..
             - name: Security scan
               run: |
                 cd backend
                 gosec -exclude=G101 -exclude-dir=database ./...
-                cd ..
     build:
         runs-on: ubuntu-latest
         steps:
@@ -75,12 +67,10 @@ jobs:
               run: |
                 cd frontend
                 npm ci
-                cd ..
             - name: Build
               run: |
                 cd frontend
                 npm run build
-                cd ..
             - name: Use golang
               uses: actions/setup-go@v4
               with:
@@ -89,4 +79,3 @@ jobs:
               run: |
                 cd backend
                 go mod tidy
-                cd ..
