@@ -18,10 +18,17 @@ type user_t struct {
 	id   uuid.UUID
 	conn *websocket.Conn
 }
+
+type state_t struct {
+	started bool
+	ended   bool	
+}
+
 type room_t struct {
 	id          uuid.UUID
 	owner       *user_t
 	participant *user_t
+	state       state_t
 }
 
 type message_t struct {
@@ -32,20 +39,11 @@ type message_t struct {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		origin := r.Header.Get("Origin")
-		return origin == "http://localhost:3000"
-	},
 }
 
 var rooms = make(map[uuid.UUID]*room_t)
 
 func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
-	userId, err := auth.GetIdFromReqCtx(r)
-	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to get user id")
-		return
-	}
 	roomId := r.URL.Query().Get("roomId")
 	if roomId == "" {
 		lib.WriteError(w, http.StatusBadRequest, "Missing room id")
@@ -56,6 +54,51 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
+	// this is for local development
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+
+	// get the first message to know if the user is the owner or participant
+	var msg message_t
+	err = conn.ReadJSON(&msg)
+	if err != nil {
+		return
+	}
+	if msg.Type != "join" {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid message type")
+		return
+	}
+
+	// get access token from first message
+	joinPayload := msg.Payload.(map[string]interface{})
+	accessToken, ok := joinPayload["access_token"].(string)
+	if !ok {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid access token")
+		return
+	}
+	isOwnerClaim, ok := joinPayload["is_owner"].(bool)
+	if !ok {
+		lib.WriteError(w, http.StatusBadRequest, "Invalid is owner")
+		return
+	}
+
+	user, err := auth.VerifyJWT(accessToken, cfg.JWTSecret)
+	if err != nil {
+		lib.WriteError(w, http.StatusUnauthorized, "Invalid access token")
+		return
+	}
+
+	userId, err := uuid.Parse(user.Id)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to parse user id")
+		return
+	}
+
 	dbRoom, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
@@ -66,7 +109,7 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		lib.WriteError(w, http.StatusBadRequest, "No participant in this room")
 		return
 	}
-	if dbRoom.OwnerID != userId && participantId.UUID != userId {
+	if dbRoom.OwnerID.String() != userId.String() && participantId.UUID.String() != userId.String() {
 		lib.WriteError(w, http.StatusUnauthorized, "You are not the owner or participant of this room")
 		return
 	}
@@ -76,17 +119,22 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		return
 	}
 	// check if is owner
-	isOwner := dbRoom.OwnerID == userId
+	isOwner := dbRoom.OwnerID.String() == userId.String()
+	// check if is owner claim matches
+	if isOwner != isOwnerClaim {
+		lib.WriteError(w, http.StatusUnauthorized, "Invalid request")
+		return
+	}
 	room, ok := rooms[roomUUID]
 	if !ok {
 		room = &room_t{
 			id: roomUUID,
+			state: state_t{
+				started: dbRoom.Status == database.RoomStatusLive,
+				ended:   false,
+			},
 		}
 		rooms[roomUUID] = room
-	}
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		return
 	}
 	if isOwner {
 		if room.owner.conn != nil {
@@ -118,6 +166,17 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 		}
 		switch msg.Type {
 		case "start":
+			if room.state.started {
+				writeMessage(message_t{
+					Type:    "started",
+					Payload: nil,
+				}, room, isOwner)
+				writeMessage(message_t{
+					Type:    "started",
+					Payload: nil,
+				}, room, !isOwner)
+				continue
+			}
 			if !isOwner {
 				fmt.Println("Not owner tried to start call")
 				continue
@@ -143,7 +202,7 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 				Payload: nil,
 			}, room, !isOwner)
 
-			return
+			room.state.started = true
 
 		case "end":
 			if !isOwner {
@@ -171,7 +230,7 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 			delete(rooms, room.id)
 			room.owner.conn.Close()
 			room.participant.conn.Close()
-			return
+			room.state.ended = true
 
 		case "offer":
 			fallthrough
