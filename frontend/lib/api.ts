@@ -23,6 +23,10 @@ export const api = axios.create({
 });
 
 
+export function getAccessToken(){
+  return access_token;
+}
+
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (excludePaths.some((path) => config.url?.includes(path))) return config;

@@ -7,23 +7,28 @@ import { Editor } from "@monaco-editor/react"
 import { ArrowLeft, Check, Clock, FileCode, Mic, PhoneOff, Play, TextIcon, Trash2, Video } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Separator } from "react-resizable-panels";
+import { Room } from "./room";
+import { getAccessToken } from "@/lib/api";
+import { createContext, useContext } from "react";
+import { Room as RoomType, Question as Problem } from "@/lib/types";
+import { api } from "@/lib/api";
 
+type Interview = RoomType & {
+    is_owner: boolean;
+    is_participant: boolean;
+}
 const isOwner: boolean = true;
 // const peerConnection = new RTCPeerConnection();
 // console.log(peerConnection);
 let isUserJoined: boolean = true;
 
 
-type Problem = {
-    id: string;
-    title: string;
-    description: string;
-    type: "text"|"code";
-    boilerplateCode?: string;
-    language?: string;
-}
+const DataContext = createContext<Interview | null>(null)
+
+
 const codeOutput: string[] = [
     "Running your code...",
     "Code is running...",
@@ -86,9 +91,44 @@ const testData: Problem[] = [
     },
     
 ]
+
+let room: Room | null = null;
+
 export default function RoomPage(){
+    const params = useParams();
+    const router = useRouter();
+
+    // validate room id
+    const id = params.id as string;
+    if (!id) return <div className="flex flex-col items-center justify-center h-dvh max-h-dvh">
+        <div className="flex flex-col items-center gap-2">
+            <h4 className="text-xl!">Room not found</h4>
+            <Link href="/user/dashboard" className="text-(--text-secondary) hover:underline cursor-pointer">Go back to dashboard</Link>
+        </div>
+    </div>;
+
+    // fetch room data
+    const [roomData, setRoomData] = useState<Interview | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    useEffect(() => {
+        const fetchRoom = async () => {
+            try {
+                const response = await api.get<Interview>(`/rooms/${id}`);
+                setRoomData(response.data);
+            } catch (error) {
+                setError("Failed to fetch room");
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (roomData) return;
+        room = new Room(roomData?.is_owner, id, getAccessToken());
+        fetchRoom();
+    }, [id]);
     const isMobile = useCheckWindowDimension(1024);
     return (
+        <DataProvider value={room}>
         <div className="h-dvh max-h-dvh flex flex-col">
             <header className="flex justify-between py-3 px-8 bg-(--bg-light) border border-(--border) rounded">
                 <div className="max-md:hidden"><h4>Devora</h4></div>
@@ -112,6 +152,7 @@ export default function RoomPage(){
                 </div>
                 }
         </div>
+        </DataProvider>
     )
 }
 
@@ -149,6 +190,7 @@ function DesktopUI(){
 }
 
 function CallUI(){
+    const roomData = useContext(DataContext);
     return (
         <div className="flex flex-col flex-1 mt-4 bg-(--bg-light) border border-(--border) rounded">
             <div className="h-full flex-1">
@@ -159,7 +201,7 @@ function CallUI(){
                 <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg"><Video size={20}/> Video</button>
                 <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg"><Mic size={20}/> Mic</button>
                 <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-(--destructive)/20 hover:bg-(--destructive)/40 border border-(--destructive)/40 text-(--text-primary) rounded-lg">
-                <PhoneOff size={20}/> {isOwner ?  "End Call" : "Leave call"} </button>
+                <PhoneOff size={20}/> {roomData?.is_owner ?  "End Call" : "Leave call"} </button>
             </div>
         </div>
     )
@@ -168,10 +210,25 @@ function CallUI(){
 function ProblemPhoneUI(){
     const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
     const [isSolving, setIsSolving] = useState(false);
+    const [problems, setProblems] = useState<Problem[]>([]);
+    const roomData = useContext(DataContext);
+    useEffect(() => {
+        if (roomData) {
+            const fetchProblems = async () => {
+                try {
+                    const response = await api.get<Problem[]>(`/rooms/${roomData.id}/problems`);
+                    setProblems(response.data);
+                } catch (error) {
+                    setError("Failed to fetch problems");
+                }
+            };
+            fetchProblems();
+        }
+    }, [roomData]);
     return (
         <div className="flex flex-col flex-1 mt-4 bg-(--bg-light) border border-(--border) rounded">
             <div className="flex flex-1 overflow-y-auto">
-                {!selectedProblem && <ProblemsCard problems={testData} setSelectedProblem={setSelectedProblem}/>}
+                {!selectedProblem && <ProblemsCard problems={problems} setSelectedProblem={setSelectedProblem}/>}
                 {selectedProblem && !isSolving && <ProblemViewer problem={selectedProblem} onClick={() => {setSelectedProblem(null)}} setIsSolving={setIsSolving}/>}
                 {selectedProblem && isSolving && <SolvingUI problem={selectedProblem} setIsSolving={setIsSolving}/>}
             </div>
@@ -181,10 +238,25 @@ function ProblemPhoneUI(){
 
 function ProblemTabletUI(){
     const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+    const [problems, setProblems] = useState<Problem[]>([]);
+    const roomData = useContext(DataContext);
+    useEffect(() => {
+        if (roomData) {
+            const fetchProblems = async () => {
+                try {
+                    const response = await api.get<Problem[]>(`/rooms/${roomData.id}/problems`);
+                    setProblems(response.data);
+                } catch (error) {
+                    setError("Failed to fetch problems");
+                }
+            };
+            fetchProblems();
+        }
+    }, [roomData]);
     return (
         <div className="flex flex-1 mt-4 bg-(--bg-light) border border-(--border) rounded">
             <div className="flex-1 overflow-y-auto">
-                {!selectedProblem && <ProblemsCard problems={testData} setSelectedProblem={setSelectedProblem}/>}
+                {!selectedProblem && <ProblemsCard problems={problems} setSelectedProblem={setSelectedProblem}/>}
                 {selectedProblem && 
                 <ResizablePanelGroup orientation="horizontal">
                     <ResizablePanel defaultSize={50}>
@@ -202,10 +274,25 @@ function ProblemTabletUI(){
 
 function ProblemDesktopUI(){
     const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+    const [problems, setProblems] = useState<Problem[]>([]);
+    const roomData = useContext(DataContext);
+    useEffect(() => {
+        if (roomData) {
+            const fetchProblems = async () => {
+                try {
+                    const response = await api.get<Problem[]>(`/rooms/${roomData.id}/problems`);
+                    setProblems(response.data);
+                } catch (error) {
+                    setError("Failed to fetch problems");
+                }
+            };
+            fetchProblems();
+        }
+    }, [roomData]);
     return (
         <div className="flex flex-1 mt-4 bg-(--bg-light) border border-(--border) rounded">
             <div className="flex-1 overflow-y-auto">
-                {!selectedProblem && <ProblemsCard problems={testData} setSelectedProblem={setSelectedProblem}/>}
+                {!selectedProblem && <ProblemsCard problems={problems} setSelectedProblem={setSelectedProblem}/>}
                 {selectedProblem && 
                 <ResizablePanelGroup orientation="horizontal">
                     <ResizablePanel defaultSize={50}>
@@ -299,4 +386,7 @@ function SolvingUI({problem, setIsSolving}: {problem:Problem, setIsSolving?: (is
             }
         </div>
     )
+}
+function submitAnswer(){
+    
 }
