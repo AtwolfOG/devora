@@ -14,6 +14,20 @@ import (
 	"github.com/google/uuid"
 )
 
+// SubmitAnswer godoc
+//
+// @Summary Submit an answer for a question
+// @Tags Answers
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param question_id path integer true "Question ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions/{question_id}/answer [post]
 func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {
@@ -87,6 +101,20 @@ func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Answer saved successfully"})
 }
 
+// SubmitCode godoc
+//
+// @Summary Submit code for a question
+// @Tags Answers
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param question_id path integer true "Question ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions/{question_id}/code [post]
 func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {
@@ -180,6 +208,18 @@ func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Code saved successfully"})
 }
 
+// GetAnswer godoc
+//
+// @Summary Get answer for a question
+// @Tags Answers
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param question_id path integer true "Question ID"
+// @Success 200 {object} database.Answer
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions/{question_id}/answer [get]
 func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {
@@ -215,6 +255,18 @@ func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	lib.WriteJSON(w, http.StatusOK, answer)
 }
 
+// GetCode godoc
+//
+// @Summary Get code for a question
+// @Tags Answers
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param question_id path integer true "Question ID"
+// @Success 200 {object} database.CodeSnippet
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions/{question_id}/code [get]
 func GetCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
 	if questionIdParam == "" {

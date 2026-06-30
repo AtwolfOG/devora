@@ -1,3 +1,4 @@
+//go:generate swag init --dir . --output docs --parseDependency --parseInternal
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	_ "github.com/AtwolfOG/devora/docs"
 	"github.com/AtwolfOG/devora/internal/auth"
 	"github.com/AtwolfOG/devora/internal/config"
 	"github.com/AtwolfOG/devora/room"
@@ -12,9 +14,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-const port = "8080"
 
 func configWrapper(config *config.Config, handler func(w http.ResponseWriter, r *http.Request, config *config.Config)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -22,6 +24,14 @@ func configWrapper(config *config.Config, handler func(w http.ResponseWriter, r 
 	}
 }
 
+// @title Devora API
+// @version 1.0
+// @description API for Devora - a platform for live technical interviews
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	config := config.LoadConfig()
 	r := chi.NewRouter()
@@ -93,9 +103,11 @@ func main() {
 	roomRouter.Patch("/{room_id}/questions/{question_id}/fail", configWrapper(config, room.FailQuestion))
 	apiRouter.Mount("/rooms", roomRouter)
 	r.Mount("/api", apiRouter)
-	log.Println("Server started on port " + port)
+
+	r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
+	log.Println("Server started on port " + config.Port)
 	srv := &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + config.Port,
 		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

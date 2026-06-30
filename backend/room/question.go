@@ -21,6 +21,20 @@ type CreateQuestionRequest struct {
 	Language    string `json:"language"`
 }
 
+// CreateQuestion godoc
+//
+// @Summary Create a question in a room
+// @Tags Questions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param request body CreateQuestionRequest true "Create question request body"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions [post]
 func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req CreateQuestionRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -118,6 +132,18 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	lib.WriteJSON(w, http.StatusCreated, map[string]string{"message": "Question created successfully"})
 }
 
+// GetRoomQuestions godoc
+//
+// @Summary Get questions for a room
+// @Tags Questions
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions [get]
 func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
@@ -205,6 +231,18 @@ func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Con
 	lib.WriteJSON(w, http.StatusOK, question)
 }
 
+// PassQuestion godoc
+//
+// @Summary Mark a question as passed
+// @Tags Questions
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param question_id path integer true "Question ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions/{question_id}/pass [patch]
 func PassQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")
@@ -237,6 +275,18 @@ func PassQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Question passed successfully"})
 }
 
+// FailQuestion godoc
+//
+// @Summary Mark a question as failed
+// @Tags Questions
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param question_id path integer true "Question ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions/{question_id}/fail [patch]
 func FailQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")
@@ -269,6 +319,19 @@ func FailQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Question failed successfully"})
 }
 
+// DeleteQuestion godoc
+//
+// @Summary Delete a question from a room
+// @Tags Questions
+// @Produce json
+// @Security BearerAuth
+// @Param room_id path string true "Room ID"
+// @Param question_id path integer true "Question ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/rooms/{room_id}/questions/{question_id} [delete]
 func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")

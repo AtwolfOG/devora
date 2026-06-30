@@ -12,6 +12,16 @@ import (
 	"github.com/google/uuid"
 )
 
+// GetDashboardStat godoc
+//
+// @Summary Get dashboard statistics
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/users/dashboard [get]
 func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
@@ -81,6 +91,16 @@ func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config
 	})
 }
 
+// GetUserData godoc
+//
+// @Summary Get current user profile
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/users/profile [get]
 func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {
@@ -101,6 +121,17 @@ func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	})
 }
 
+// GetUser godoc
+//
+// @Summary Get user by ID
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Param user_id path string true "User ID"
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/users/{user_id} [get]
 func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userIdParam := r.PathValue("user_id")
 	if userIdParam == "" {
@@ -126,6 +157,16 @@ func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	})
 }
 
+// GetSettings godoc
+//
+// @Summary Get user OAuth settings
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/users/settings [get]
 func GetSettings(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
 	if err != nil {

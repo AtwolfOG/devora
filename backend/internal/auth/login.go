@@ -14,6 +14,17 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// LoginWithEmailAndPassword godoc
+//
+// @Summary Log in with email and password
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login request body"
+// @Success 200 {object} SignupResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /auth/login [post]
 func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)

@@ -22,6 +22,17 @@ type SignupRequest struct {
 	Name     string `json:"name"`
 }
 
+// SignupWithEmailAndPassword godoc
+//
+// @Summary Sign up with email and password
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body SignupRequest true "Signup request body"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /auth/signup [post]
 func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req SignupRequest
 	err := json.NewDecoder(r.Body).Decode(&req)

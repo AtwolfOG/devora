@@ -8,6 +8,14 @@ import (
 	"github.com/AtwolfOG/devora/lib"
 )
 
+// Status godoc
+//
+// @Summary Check authentication status
+// @Tags Authentication
+// @Produce json
+// @Success 200 {object} map[string]bool
+// @Failure 401 {object} map[string]string
+// @Router /auth/status [get]
 func Status(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {

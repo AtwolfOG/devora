@@ -74,6 +74,17 @@ func getGithubUser(client *http.Client) (*githubUserResponse, error) {
 	return &userRes, nil
 }
 
+// LoginWithGithub godoc
+//
+// @Summary Log in with GitHub OAuth
+// @Tags Authentication
+// @Produce json
+// @Param code query string true "GitHub OAuth authorization code"
+// @Param state query string true "OAuth state token"
+// @Success 200 {object} SignupResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /auth/callback/github [get]
 func LoginWithGithub(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	githubOauthConfig := &oauth2.Config{
 		ClientID:     cfg.GithubClientId,
@@ -243,6 +254,14 @@ func signupNewUserWithGithub(w http.ResponseWriter, r *http.Request, cfg *config
 	SendRefreshAndAccessToken(w, r, cfg, user.ID)
 }
 
+// SendGithubLink godoc
+//
+// @Summary Get GitHub OAuth login URL
+// @Tags Authentication
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /auth/link/github [get]
 func SendGithubLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	githubOauthConfig := &oauth2.Config{
 		ClientID:     cfg.GithubClientId,

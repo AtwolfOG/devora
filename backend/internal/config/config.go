@@ -27,6 +27,7 @@ type Config struct {
 	Environment        string
 	FrontendUrl        string
 	Database           *sql.DB
+	Port               string
 }
 
 func LoadConfig() *Config {
@@ -95,6 +96,11 @@ func LoadConfig() *Config {
 		log.Fatal("Error loading database url")
 	}
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("Error loading port")
+	}
+
 	// Create database connection with proper configuration
 	db, err := sql.Open("postgres", databaseUrl)
 	if err != nil {
@@ -123,6 +129,7 @@ func LoadConfig() *Config {
 		Environment:        environment,
 		Database:           db,
 		DB:                 dbQueries,
+		Port:               port,
 	}
 }
 
