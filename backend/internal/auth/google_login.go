@@ -45,13 +45,15 @@ func getGoogleUser(client *http.Client) (*googleUserResponse, error) {
 // LoginWithGoogle godoc
 //
 // @Summary Log in with Google OAuth
+// @Description Callback endpoint for Google OAuth. Exchanges authorization code for access token.
+// @ID loginWithGoogle
 // @Tags Authentication
 // @Produce json
 // @Param code query string true "Google OAuth authorization code"
 // @Param state query string true "OAuth state token"
 // @Success 200 {object} SignupResponse
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /auth/callback/google [get]
 func LoginWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	googleOauthConfig := &oauth2.Config{
@@ -225,10 +227,12 @@ func signupNewUserWithGoogle(w http.ResponseWriter, r *http.Request, cfg *config
 // SendGoogleLink godoc
 //
 // @Summary Get Google OAuth login URL
+// @Description Returns the redirect URL for starting the Google OAuth authentication flow.
+// @ID sendGoogleLink
 // @Tags Authentication
 // @Produce json
-// @Success 200 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.OAuthLinkResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /auth/link/google [get]
 func SendGoogleLink(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	googleOauthConfig := &oauth2.Config{

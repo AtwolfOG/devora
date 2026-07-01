@@ -54,11 +54,13 @@ func SendRefreshAndAccessToken(w http.ResponseWriter, r *http.Request, cfg *conf
 // RefreshToken godoc
 //
 // @Summary Refresh access token
+// @Description Generates a new access token if the refresh token cookie is valid.
+// @ID refreshToken
 // @Tags Authentication
 // @Produce json
-// @Success 200 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} SignupResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /auth/refresh [post]
 func RefreshToken(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	cookie, err := r.Cookie("refresh_token")

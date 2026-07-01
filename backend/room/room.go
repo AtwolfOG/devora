@@ -25,14 +25,16 @@ type CreateRoomRequest struct {
 // CreateRoom godoc
 //
 // @Summary Create a new room
+// @Description Creates a new interview room with a specific role, company, description, and start time.
+// @ID createRoom
 // @Tags Rooms
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param request body CreateRoomRequest true "Create room request body"
-// @Success 201 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 201 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms [post]
 func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req CreateRoomRequest
@@ -88,13 +90,15 @@ func CreateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // GetRoomByID godoc
 //
 // @Summary Get room by ID
+// @Description Returns the detailed room configuration including owner/participant flags.
+// @ID getRoomByID
 // @Tags Rooms
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Success 200 {object} RoomDetailsResponseDTO
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id} [get]
 func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
@@ -135,6 +139,8 @@ func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // GetRooms godoc
 //
 // @Summary Get rooms for current user
+// @Description Returns the filtered list of rooms (owned or participated in) by the current user.
+// @ID getRooms
 // @Tags Rooms
 // @Produce json
 // @Security BearerAuth
@@ -143,8 +149,8 @@ func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // @Param offset query integer false "Offset for pagination"
 // @Param type query string false "Filter by type (owner, participant)"
 // @Success 200 {array} RoomDTO
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms [get]
 func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
@@ -317,14 +323,16 @@ func GetRooms(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // DeleteRoom godoc
 //
 // @Summary Delete a room
+// @Description Deletes a room if it is owned by the authenticated user.
+// @ID deleteRoom
 // @Tags Rooms
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id} [delete]
 func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
@@ -367,14 +375,16 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // AddParticipantToRoom godoc
 //
 // @Summary Join a room as participant
+// @Description Adds the authenticated user as the participant in a pending room.
+// @ID joinRoom
 // @Tags Rooms
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/join [patch]
 func AddParticipantToRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
@@ -429,14 +439,16 @@ func AddParticipantToRoom(w http.ResponseWriter, r *http.Request, cfg *config.Co
 // RemoveParticipantFromRoom godoc
 //
 // @Summary Leave a room or remove participant
+// @Description Removes the participant from a pending room.
+// @ID leaveRoom
 // @Tags Rooms
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/leave [patch]
 func RemoveParticipantFromRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
@@ -481,16 +493,18 @@ func RemoveParticipantFromRoom(w http.ResponseWriter, r *http.Request, cfg *conf
 // UpdateRoom godoc
 //
 // @Summary Update a room
+// @Description Updates a room's role, company, description, and start time.
+// @ID updateRoom
 // @Tags Rooms
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param request body CreateRoomRequest true "Update room request body"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id} [put]
 func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
@@ -564,14 +578,16 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // CancelRoom godoc
 //
 // @Summary Cancel a room
+// @Description Sets a room's status to cancelled.
+// @ID cancelRoom
 // @Tags Rooms
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/cancel [patch]
 func CancelRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
@@ -614,15 +630,18 @@ func CancelRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // RescheduleRoom godoc
 //
 // @Summary Reschedule a cancelled room
+// @Description Sets a cancelled room back to pending with a new start time.
+// @ID rescheduleRoom
 // @Tags Rooms
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param request body RescheduleRoomRequest true "Reschedule room request body"
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/reschedule [patch]
 func RescheduleRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
@@ -691,15 +710,18 @@ func RescheduleRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 // SubmitFeedback godoc
 //
 // @Summary Submit feedback for a room
+// @Description Saves feedback notes and interview pass/fail outcomes, changing the room's status to completed.
+// @ID submitFeedback
 // @Tags Rooms
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param request body SubmitFeedbackRequest true "Submit feedback request body"
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/submit-feedback [patch]
 func SubmitFeedback(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)

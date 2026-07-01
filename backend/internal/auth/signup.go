@@ -25,13 +25,15 @@ type SignupRequest struct {
 // SignupWithEmailAndPassword godoc
 //
 // @Summary Sign up with email and password
+// @Description Registers a new user with name, email, and password. Sends a verification email.
+// @ID signUp
 // @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body SignupRequest true "Signup request body"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /auth/signup [post]
 func SignupWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req SignupRequest

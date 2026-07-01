@@ -70,3 +70,47 @@ type CodeSnippetDTO struct {
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
+
+// QuestionDTO represents a database question in the API responses
+type QuestionDTO struct {
+	ID          int32     `json:"id"`
+	RoomID      string    `json:"room_id"`
+	Done        bool      `json:"done"`
+	Passed      NullBool  `json:"passed"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	IsCode      bool      `json:"is_code"`
+}
+
+// QuestionsResponseDTO represents the response containing the room's questions
+type QuestionsResponseDTO struct {
+	Questions []QuestionDTO `json:"questions"`
+	IsOwner   bool          `json:"is_owner"`
+}
+
+// SubmitAnswerRequest represents the request body for submitting an answer
+type SubmitAnswerRequest struct {
+	Answer string `json:"answer"`
+}
+
+// SubmitCodeRequest represents the request body for submitting a code snippet
+type SubmitCodeRequest struct {
+	Code     string `json:"code"`
+	Language string `json:"language"`
+}
+
+// RescheduleRoomRequest represents the request body for rescheduling a room
+type RescheduleRoomRequest struct {
+	StartTime string `json:"start_time"`
+}
+
+// SubmitFeedbackRequest represents the request body for submitting feedback
+type SubmitFeedbackRequest struct {
+	Feedback string `json:"feedback"`
+	Passed   bool   `json:"passed"`
+}
+
+
+

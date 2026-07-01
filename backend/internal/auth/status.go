@@ -8,13 +8,20 @@ import (
 	"github.com/AtwolfOG/devora/lib"
 )
 
+// StatusResponse represents the authentication status response
+type StatusResponse struct {
+	LoggedIn bool `json:"loggedIn"`
+}
+
 // Status godoc
 //
 // @Summary Check authentication status
+// @Description Checks if the user is authenticated by verifying their refresh token cookie.
+// @ID authStatus
 // @Tags Authentication
 // @Produce json
-// @Success 200 {object} map[string]bool
-// @Failure 401 {object} map[string]string
+// @Success 200 {object} StatusResponse
+// @Failure 401 {object} lib.ErrorResponse
 // @Router /auth/status [get]
 func Status(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	cookie, err := r.Cookie("refresh_token")

@@ -11,12 +11,14 @@ import (
 // VerifyEmail godoc
 //
 // @Summary Verify user email
+// @Description Verifies a user's email using a code from the verification link.
+// @ID verifyEmail
 // @Tags Authentication
 // @Produce json
 // @Param code path string true "Verification code"
 // @Success 200 {object} SignupResponse
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /auth/verify/{code} [get]
 func VerifyEmail(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	code := r.PathValue("code")

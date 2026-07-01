@@ -22,6 +22,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns the filtered list of rooms (owned or participated in) by the current user.",
                 "produces": [
                     "application/json"
                 ],
@@ -29,6 +30,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Get rooms for current user",
+                "operationId": "getRooms",
                 "parameters": [
                     {
                         "type": "string",
@@ -68,19 +70,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -91,6 +87,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Creates a new interview room with a specific role, company, description, and start time.",
                 "consumes": [
                     "application/json"
                 ],
@@ -101,6 +98,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Create a new room",
+                "operationId": "createRoom",
                 "parameters": [
                     {
                         "description": "Create room request body",
@@ -116,28 +114,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -150,6 +139,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns the detailed room configuration including owner/participant flags.",
                 "produces": [
                     "application/json"
                 ],
@@ -157,6 +147,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Get room by ID",
+                "operationId": "getRoomByID",
                 "parameters": [
                     {
                         "type": "string",
@@ -176,19 +167,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -199,6 +184,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Updates a room's role, company, description, and start time.",
                 "consumes": [
                     "application/json"
                 ],
@@ -209,6 +195,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Update a room",
+                "operationId": "updateRoom",
                 "parameters": [
                     {
                         "type": "string",
@@ -231,37 +218,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -272,6 +247,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Deletes a room if it is owned by the authenticated user.",
                 "produces": [
                     "application/json"
                 ],
@@ -279,6 +255,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Delete a room",
+                "operationId": "deleteRoom",
                 "parameters": [
                     {
                         "type": "string",
@@ -292,37 +269,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -335,6 +300,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Sets a room's status to cancelled.",
                 "produces": [
                     "application/json"
                 ],
@@ -342,6 +308,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Cancel a room",
+                "operationId": "cancelRoom",
                 "parameters": [
                     {
                         "type": "string",
@@ -355,37 +322,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -398,6 +353,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Adds the authenticated user as the participant in a pending room.",
                 "produces": [
                     "application/json"
                 ],
@@ -405,6 +361,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Join a room as participant",
+                "operationId": "joinRoom",
                 "parameters": [
                     {
                         "type": "string",
@@ -418,37 +375,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -461,6 +406,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Removes the participant from a pending room.",
                 "produces": [
                     "application/json"
                 ],
@@ -468,6 +414,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Leave a room or remove participant",
+                "operationId": "leaveRoom",
                 "parameters": [
                     {
                         "type": "string",
@@ -481,37 +428,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -524,6 +459,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns the list of scheduled questions in a specific room, filtering by participant state if appropriate.",
                 "produces": [
                     "application/json"
                 ],
@@ -531,6 +467,7 @@ const docTemplate = `{
                     "Questions"
                 ],
                 "summary": "Get questions for a room",
+                "operationId": "getRoomQuestions",
                 "parameters": [
                     {
                         "type": "string",
@@ -544,35 +481,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/room.QuestionsResponseDTO"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -583,6 +510,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Adds a new scheduled coding/interview question to a pending interview room.",
                 "consumes": [
                     "application/json"
                 ],
@@ -593,6 +521,7 @@ const docTemplate = `{
                     "Questions"
                 ],
                 "summary": "Create a question in a room",
+                "operationId": "createQuestion",
                 "parameters": [
                     {
                         "type": "string",
@@ -615,37 +544,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -658,6 +575,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Removes a scheduled question from a pending interview room.",
                 "produces": [
                     "application/json"
                 ],
@@ -665,6 +583,7 @@ const docTemplate = `{
                     "Questions"
                 ],
                 "summary": "Delete a question from a room",
+                "operationId": "deleteQuestion",
                 "parameters": [
                     {
                         "type": "string",
@@ -685,37 +604,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -728,6 +635,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns the saved free-text answer for a scheduled room question.",
                 "produces": [
                     "application/json"
                 ],
@@ -735,6 +643,7 @@ const docTemplate = `{
                     "Answers"
                 ],
                 "summary": "Get answer for a question",
+                "operationId": "getAnswer",
                 "parameters": [
                     {
                         "type": "string",
@@ -755,25 +664,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/database.Answer"
+                            "$ref": "#/definitions/room.AnswerDTO"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -784,6 +687,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Saves a free-text question answer for an interview candidate.",
                 "consumes": [
                     "application/json"
                 ],
@@ -794,6 +698,7 @@ const docTemplate = `{
                     "Answers"
                 ],
                 "summary": "Submit an answer for a question",
+                "operationId": "submitAnswer",
                 "parameters": [
                     {
                         "type": "string",
@@ -808,43 +713,40 @@ const docTemplate = `{
                         "name": "question_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Submit answer request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/room.SubmitAnswerRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -857,6 +759,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns the saved code snippet for a scheduled room question.",
                 "produces": [
                     "application/json"
                 ],
@@ -864,6 +767,7 @@ const docTemplate = `{
                     "Answers"
                 ],
                 "summary": "Get code for a question",
+                "operationId": "getCode",
                 "parameters": [
                     {
                         "type": "string",
@@ -884,25 +788,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/database.CodeSnippet"
+                            "$ref": "#/definitions/room.CodeSnippetDTO"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -913,6 +811,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Saves a code snippet answer for a scheduled room question.",
                 "consumes": [
                     "application/json"
                 ],
@@ -923,6 +822,7 @@ const docTemplate = `{
                     "Answers"
                 ],
                 "summary": "Submit code for a question",
+                "operationId": "submitCode",
                 "parameters": [
                     {
                         "type": "string",
@@ -937,43 +837,40 @@ const docTemplate = `{
                         "name": "question_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Submit code request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/room.SubmitCodeRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -986,6 +883,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Updates a room question status to failed.",
                 "produces": [
                     "application/json"
                 ],
@@ -993,6 +891,7 @@ const docTemplate = `{
                     "Questions"
                 ],
                 "summary": "Mark a question as failed",
+                "operationId": "failQuestion",
                 "parameters": [
                     {
                         "type": "string",
@@ -1013,28 +912,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1047,6 +937,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Updates a room question status to passed.",
                 "produces": [
                     "application/json"
                 ],
@@ -1054,6 +945,7 @@ const docTemplate = `{
                     "Questions"
                 ],
                 "summary": "Mark a question as passed",
+                "operationId": "passQuestion",
                 "parameters": [
                     {
                         "type": "string",
@@ -1074,28 +966,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1108,6 +991,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Sets a cancelled room back to pending with a new start time.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1118,6 +1002,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Reschedule a cancelled room",
+                "operationId": "rescheduleRoom",
                 "parameters": [
                     {
                         "type": "string",
@@ -1125,43 +1010,40 @@ const docTemplate = `{
                         "name": "room_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Reschedule room request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/room.RescheduleRoomRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1174,6 +1056,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Saves feedback notes and interview pass/fail outcomes, changing the room's status to completed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1184,6 +1067,7 @@ const docTemplate = `{
                     "Rooms"
                 ],
                 "summary": "Submit feedback for a room",
+                "operationId": "submitFeedback",
                 "parameters": [
                     {
                         "type": "string",
@@ -1191,43 +1075,40 @@ const docTemplate = `{
                         "name": "room_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Submit feedback request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/room.SubmitFeedbackRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1240,6 +1121,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns stats like total interview count, upcoming count, completed count and pass rate for the current user.",
                 "produces": [
                     "application/json"
                 ],
@@ -1247,30 +1129,24 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get dashboard statistics",
+                "operationId": "getDashboardStat",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/user.UserDashboardStats"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1283,6 +1159,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns the profile username, email, and picture URL for the authenticated user.",
                 "produces": [
                     "application/json"
                 ],
@@ -1290,30 +1167,24 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get current user profile",
+                "operationId": "getUserData",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/user.UserProfileResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1326,6 +1197,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns OAuth configuration statuses for the authenticated user.",
                 "produces": [
                     "application/json"
                 ],
@@ -1333,30 +1205,27 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get user OAuth settings",
+                "operationId": "getSettings",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": true
+                            "additionalProperties": {
+                                "$ref": "#/definitions/user.UserOauthSetting"
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1369,6 +1238,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Returns public profile details of a user by UUID.",
                 "produces": [
                     "application/json"
                 ],
@@ -1376,6 +1246,7 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Get user by ID",
+                "operationId": "getUser",
                 "parameters": [
                     {
                         "type": "string",
@@ -1389,26 +1260,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/user.UserProfileResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1416,6 +1280,7 @@ const docTemplate = `{
         },
         "/auth/callback/github": {
             "get": {
+                "description": "Callback endpoint for GitHub OAuth. Exchanges authorization code for access token.",
                 "produces": [
                     "application/json"
                 ],
@@ -1423,6 +1288,7 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Log in with GitHub OAuth",
+                "operationId": "loginWithGithub",
                 "parameters": [
                     {
                         "type": "string",
@@ -1449,19 +1315,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1469,6 +1329,7 @@ const docTemplate = `{
         },
         "/auth/callback/google": {
             "get": {
+                "description": "Callback endpoint for Google OAuth. Exchanges authorization code for access token.",
                 "produces": [
                     "application/json"
                 ],
@@ -1476,6 +1337,7 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Log in with Google OAuth",
+                "operationId": "loginWithGoogle",
                 "parameters": [
                     {
                         "type": "string",
@@ -1502,19 +1364,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1522,6 +1378,7 @@ const docTemplate = `{
         },
         "/auth/link/github": {
             "get": {
+                "description": "Returns the redirect URL for starting the GitHub OAuth authentication flow.",
                 "produces": [
                     "application/json"
                 ],
@@ -1529,23 +1386,18 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Get GitHub OAuth login URL",
+                "operationId": "sendGithubLink",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.OAuthLinkResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1553,6 +1405,7 @@ const docTemplate = `{
         },
         "/auth/link/google": {
             "get": {
+                "description": "Returns the redirect URL for starting the Google OAuth authentication flow.",
                 "produces": [
                     "application/json"
                 ],
@@ -1560,23 +1413,18 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Get Google OAuth login URL",
+                "operationId": "sendGoogleLink",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.OAuthLinkResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1584,6 +1432,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
+                "description": "Logs in a user using email and password, returning an access token and setting a refresh token cookie.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1594,6 +1443,7 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Log in with email and password",
+                "operationId": "login",
                 "parameters": [
                     {
                         "description": "Login request body",
@@ -1615,19 +1465,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1635,6 +1479,7 @@ const docTemplate = `{
         },
         "/auth/refresh": {
             "post": {
+                "description": "Generates a new access token if the refresh token cookie is valid.",
                 "produces": [
                     "application/json"
                 ],
@@ -1642,32 +1487,24 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Refresh access token",
+                "operationId": "refreshToken",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/auth.SignupResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1675,6 +1512,7 @@ const docTemplate = `{
         },
         "/auth/signup": {
             "post": {
+                "description": "Registers a new user with name, email, and password. Sends a verification email.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1685,6 +1523,7 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Sign up with email and password",
+                "operationId": "signUp",
                 "parameters": [
                     {
                         "description": "Signup request body",
@@ -1700,28 +1539,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1729,6 +1559,7 @@ const docTemplate = `{
         },
         "/auth/status": {
             "get": {
+                "description": "Checks if the user is authenticated by verifying their refresh token cookie.",
                 "produces": [
                     "application/json"
                 ],
@@ -1736,23 +1567,18 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Check authentication status",
+                "operationId": "authStatus",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "boolean"
-                            }
+                            "$ref": "#/definitions/auth.StatusResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1760,6 +1586,7 @@ const docTemplate = `{
         },
         "/auth/verify/{code}": {
             "get": {
+                "description": "Verifies a user's email using a code from the verification link.",
                 "produces": [
                     "application/json"
                 ],
@@ -1767,6 +1594,7 @@ const docTemplate = `{
                     "Authentication"
                 ],
                 "summary": "Verify user email",
+                "operationId": "verifyEmail",
                 "parameters": [
                     {
                         "type": "string",
@@ -1786,19 +1614,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/lib.ErrorResponse"
                         }
                     }
                 }
@@ -1839,7 +1661,39 @@ const docTemplate = `{
                 }
             }
         },
-        "database.Answer": {
+        "auth.StatusResponse": {
+            "type": "object",
+            "properties": {
+                "loggedIn": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "lib.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "lib.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "lib.OAuthLinkResponse": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "room.AnswerDTO": {
             "type": "object",
             "properties": {
                 "answer": {
@@ -1859,7 +1713,7 @@ const docTemplate = `{
                 }
             }
         },
-        "database.CodeSnippet": {
+        "room.CodeSnippetDTO": {
             "type": "object",
             "properties": {
                 "code": {
@@ -1869,7 +1723,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "language": {
-                    "$ref": "#/definitions/database.Language"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -1884,19 +1738,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "database.Language": {
-            "type": "string",
-            "enum": [
-                "python",
-                "javascript",
-                "go"
-            ],
-            "x-enum-varnames": [
-                "LanguagePython",
-                "LanguageJavascript",
-                "LanguageGo"
-            ]
         },
         "room.CreateQuestionRequest": {
             "type": "object",
@@ -1976,6 +1817,60 @@ const docTemplate = `{
                 },
                 "valid": {
                     "type": "boolean"
+                }
+            }
+        },
+        "room.QuestionDTO": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "done": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_code": {
+                    "type": "boolean"
+                },
+                "passed": {
+                    "$ref": "#/definitions/room.NullBool"
+                },
+                "room_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "room.QuestionsResponseDTO": {
+            "type": "object",
+            "properties": {
+                "is_owner": {
+                    "type": "boolean"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/room.QuestionDTO"
+                    }
+                }
+            }
+        },
+        "room.RescheduleRoomRequest": {
+            "type": "object",
+            "properties": {
+                "start_time": {
+                    "type": "string"
                 }
             }
         },
@@ -2075,6 +1970,87 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "room.SubmitAnswerRequest": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                }
+            }
+        },
+        "room.SubmitCodeRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                }
+            }
+        },
+        "room.SubmitFeedbackRequest": {
+            "type": "object",
+            "properties": {
+                "feedback": {
+                    "type": "string"
+                },
+                "passed": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "user.UserDashboardStats": {
+            "type": "object",
+            "properties": {
+                "completed_interview_count": {
+                    "type": "integer"
+                },
+                "pass_rate": {
+                    "type": "number"
+                },
+                "total_interview_count": {
+                    "type": "integer"
+                },
+                "upcoming_interview_count": {
+                    "type": "integer"
+                },
+                "user_image": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.UserOauthSetting": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.UserProfileResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "profile_picture_url": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }

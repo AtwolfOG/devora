@@ -17,13 +17,15 @@ type LoginRequest struct {
 // LoginWithEmailAndPassword godoc
 //
 // @Summary Log in with email and password
+// @Description Logs in a user using email and password, returning an access token and setting a refresh token cookie.
+// @ID login
 // @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body LoginRequest true "Login request body"
 // @Success 200 {object} SignupResponse
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
 // @Router /auth/login [post]
 func LoginWithEmailAndPassword(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req LoginRequest

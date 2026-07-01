@@ -21,7 +21,27 @@ definitions:
       access_token:
         type: string
     type: object
-  database.Answer:
+  auth.StatusResponse:
+    properties:
+      loggedIn:
+        type: boolean
+    type: object
+  lib.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  lib.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  lib.OAuthLinkResponse:
+    properties:
+      url:
+        type: string
+    type: object
+  room.AnswerDTO:
     properties:
       answer:
         type: string
@@ -34,14 +54,14 @@ definitions:
       updated_at:
         type: string
     type: object
-  database.CodeSnippet:
+  room.CodeSnippetDTO:
     properties:
       code:
         type: string
       created_at:
         type: string
       language:
-        $ref: '#/definitions/database.Language'
+        type: string
       name:
         type: string
       question_id:
@@ -51,16 +71,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  database.Language:
-    enum:
-    - python
-    - javascript
-    - go
-    type: string
-    x-enum-varnames:
-    - LanguagePython
-    - LanguageJavascript
-    - LanguageGo
   room.CreateQuestionRequest:
     properties:
       code:
@@ -112,6 +122,41 @@ definitions:
         type: string
       valid:
         type: boolean
+    type: object
+  room.QuestionDTO:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      done:
+        type: boolean
+      id:
+        type: integer
+      is_code:
+        type: boolean
+      passed:
+        $ref: '#/definitions/room.NullBool'
+      room_id:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  room.QuestionsResponseDTO:
+    properties:
+      is_owner:
+        type: boolean
+      questions:
+        items:
+          $ref: '#/definitions/room.QuestionDTO'
+        type: array
+    type: object
+  room.RescheduleRoomRequest:
+    properties:
+      start_time:
+        type: string
     type: object
   room.RoomDTO:
     properties:
@@ -179,6 +224,58 @@ definitions:
       updated_at:
         type: string
     type: object
+  room.SubmitAnswerRequest:
+    properties:
+      answer:
+        type: string
+    type: object
+  room.SubmitCodeRequest:
+    properties:
+      code:
+        type: string
+      language:
+        type: string
+    type: object
+  room.SubmitFeedbackRequest:
+    properties:
+      feedback:
+        type: string
+      passed:
+        type: boolean
+    type: object
+  user.UserDashboardStats:
+    properties:
+      completed_interview_count:
+        type: integer
+      pass_rate:
+        type: number
+      total_interview_count:
+        type: integer
+      upcoming_interview_count:
+        type: integer
+      user_image:
+        type: string
+      username:
+        type: string
+    type: object
+  user.UserOauthSetting:
+    properties:
+      created_at:
+        type: string
+      provider:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  user.UserProfileResponse:
+    properties:
+      email:
+        type: string
+      profile_picture_url:
+        type: string
+      username:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -188,6 +285,9 @@ info:
 paths:
   /api/rooms:
     get:
+      description: Returns the filtered list of rooms (owned or participated in) by
+        the current user.
+      operationId: getRooms
       parameters:
       - description: Comma-separated room statuses (pending,live,reviewing,completed,cancelled)
         in: query
@@ -217,15 +317,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get rooms for current user
@@ -234,6 +330,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Creates a new interview room with a specific role, company, description,
+        and start time.
+      operationId: createRoom
       parameters:
       - description: Create room request body
         in: body
@@ -247,21 +346,15 @@ paths:
         "201":
           description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a new room
@@ -269,6 +362,8 @@ paths:
       - Rooms
   /api/rooms/{room_id}:
     delete:
+      description: Deletes a room if it is owned by the authenticated user.
+      operationId: deleteRoom
       parameters:
       - description: Room ID
         in: path
@@ -281,33 +376,28 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete a room
       tags:
       - Rooms
     get:
+      description: Returns the detailed room configuration including owner/participant
+        flags.
+      operationId: getRoomByID
       parameters:
       - description: Room ID
         in: path
@@ -324,15 +414,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get room by ID
@@ -341,6 +427,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Updates a room's role, company, description, and start time.
+      operationId: updateRoom
       parameters:
       - description: Room ID
         in: path
@@ -359,27 +447,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update a room
@@ -387,6 +467,8 @@ paths:
       - Rooms
   /api/rooms/{room_id}/cancel:
     patch:
+      description: Sets a room's status to cancelled.
+      operationId: cancelRoom
       parameters:
       - description: Room ID
         in: path
@@ -399,27 +481,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Cancel a room
@@ -427,6 +501,8 @@ paths:
       - Rooms
   /api/rooms/{room_id}/join:
     patch:
+      description: Adds the authenticated user as the participant in a pending room.
+      operationId: joinRoom
       parameters:
       - description: Room ID
         in: path
@@ -439,27 +515,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Join a room as participant
@@ -467,6 +535,8 @@ paths:
       - Rooms
   /api/rooms/{room_id}/leave:
     patch:
+      description: Removes the participant from a pending room.
+      operationId: leaveRoom
       parameters:
       - description: Room ID
         in: path
@@ -479,27 +549,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Leave a room or remove participant
@@ -507,6 +569,9 @@ paths:
       - Rooms
   /api/rooms/{room_id}/questions:
     get:
+      description: Returns the list of scheduled questions in a specific room, filtering
+        by participant state if appropriate.
+      operationId: getRoomQuestions
       parameters:
       - description: Room ID
         in: path
@@ -519,26 +584,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/room.QuestionsResponseDTO'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get questions for a room
@@ -547,6 +605,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Adds a new scheduled coding/interview question to a pending interview
+        room.
+      operationId: createQuestion
       parameters:
       - description: Room ID
         in: path
@@ -565,27 +626,19 @@ paths:
         "201":
           description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a question in a room
@@ -593,6 +646,8 @@ paths:
       - Questions
   /api/rooms/{room_id}/questions/{question_id}:
     delete:
+      description: Removes a scheduled question from a pending interview room.
+      operationId: deleteQuestion
       parameters:
       - description: Room ID
         in: path
@@ -610,27 +665,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete a question from a room
@@ -638,6 +685,8 @@ paths:
       - Questions
   /api/rooms/{room_id}/questions/{question_id}/answer:
     get:
+      description: Returns the saved free-text answer for a scheduled room question.
+      operationId: getAnswer
       parameters:
       - description: Room ID
         in: path
@@ -655,19 +704,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/database.Answer'
+            $ref: '#/definitions/room.AnswerDTO'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get answer for a question
@@ -676,6 +721,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Saves a free-text question answer for an interview candidate.
+      operationId: submitAnswer
       parameters:
       - description: Room ID
         in: path
@@ -687,33 +734,31 @@ paths:
         name: question_id
         required: true
         type: integer
+      - description: Submit answer request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/room.SubmitAnswerRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Submit an answer for a question
@@ -721,6 +766,8 @@ paths:
       - Answers
   /api/rooms/{room_id}/questions/{question_id}/code:
     get:
+      description: Returns the saved code snippet for a scheduled room question.
+      operationId: getCode
       parameters:
       - description: Room ID
         in: path
@@ -738,19 +785,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/database.CodeSnippet'
+            $ref: '#/definitions/room.CodeSnippetDTO'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get code for a question
@@ -759,6 +802,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Saves a code snippet answer for a scheduled room question.
+      operationId: submitCode
       parameters:
       - description: Room ID
         in: path
@@ -770,33 +815,31 @@ paths:
         name: question_id
         required: true
         type: integer
+      - description: Submit code request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/room.SubmitCodeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Submit code for a question
@@ -804,6 +847,8 @@ paths:
       - Answers
   /api/rooms/{room_id}/questions/{question_id}/fail:
     patch:
+      description: Updates a room question status to failed.
+      operationId: failQuestion
       parameters:
       - description: Room ID
         in: path
@@ -821,21 +866,15 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Mark a question as failed
@@ -843,6 +882,8 @@ paths:
       - Questions
   /api/rooms/{room_id}/questions/{question_id}/pass:
     patch:
+      description: Updates a room question status to passed.
+      operationId: passQuestion
       parameters:
       - description: Room ID
         in: path
@@ -860,21 +901,15 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Mark a question as passed
@@ -884,39 +919,39 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Sets a cancelled room back to pending with a new start time.
+      operationId: rescheduleRoom
       parameters:
       - description: Room ID
         in: path
         name: room_id
         required: true
         type: string
+      - description: Reschedule room request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/room.RescheduleRoomRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Reschedule a cancelled room
@@ -926,39 +961,40 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Saves feedback notes and interview pass/fail outcomes, changing
+        the room's status to completed.
+      operationId: submitFeedback
       parameters:
       - description: Room ID
         in: path
         name: room_id
         required: true
         type: string
+      - description: Submit feedback request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/room.SubmitFeedbackRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Submit feedback for a room
@@ -966,6 +1002,8 @@ paths:
       - Rooms
   /api/users/{user_id}:
     get:
+      description: Returns public profile details of a user by UUID.
+      operationId: getUser
       parameters:
       - description: User ID
         in: path
@@ -978,20 +1016,15 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/user.UserProfileResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get user by ID
@@ -999,26 +1032,24 @@ paths:
       - Users
   /api/users/dashboard:
     get:
+      description: Returns stats like total interview count, upcoming count, completed
+        count and pass rate for the current user.
+      operationId: getDashboardStat
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/user.UserDashboardStats'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get dashboard statistics
@@ -1026,26 +1057,24 @@ paths:
       - Users
   /api/users/profile:
     get:
+      description: Returns the profile username, email, and picture URL for the authenticated
+        user.
+      operationId: getUserData
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/user.UserProfileResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get current user profile
@@ -1053,26 +1082,25 @@ paths:
       - Users
   /api/users/settings:
     get:
+      description: Returns OAuth configuration statuses for the authenticated user.
+      operationId: getSettings
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
+            additionalProperties:
+              $ref: '#/definitions/user.UserOauthSetting'
             type: object
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get user OAuth settings
@@ -1080,6 +1108,9 @@ paths:
       - Users
   /auth/callback/github:
     get:
+      description: Callback endpoint for GitHub OAuth. Exchanges authorization code
+        for access token.
+      operationId: loginWithGithub
       parameters:
       - description: GitHub OAuth authorization code
         in: query
@@ -1101,20 +1132,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Log in with GitHub OAuth
       tags:
       - Authentication
   /auth/callback/google:
     get:
+      description: Callback endpoint for Google OAuth. Exchanges authorization code
+        for access token.
+      operationId: loginWithGoogle
       parameters:
       - description: Google OAuth authorization code
         in: query
@@ -1136,55 +1166,49 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Log in with Google OAuth
       tags:
       - Authentication
   /auth/link/github:
     get:
+      description: Returns the redirect URL for starting the GitHub OAuth authentication
+        flow.
+      operationId: sendGithubLink
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.OAuthLinkResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Get GitHub OAuth login URL
       tags:
       - Authentication
   /auth/link/google:
     get:
+      description: Returns the redirect URL for starting the Google OAuth authentication
+        flow.
+      operationId: sendGoogleLink
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.OAuthLinkResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Get Google OAuth login URL
       tags:
       - Authentication
@@ -1192,6 +1216,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Logs in a user using email and password, returning an access token
+        and setting a refresh token cookie.
+      operationId: login
       parameters:
       - description: Login request body
         in: body
@@ -1209,41 +1236,33 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Log in with email and password
       tags:
       - Authentication
   /auth/refresh:
     post:
+      description: Generates a new access token if the refresh token cookie is valid.
+      operationId: refreshToken
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/auth.SignupResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Refresh access token
       tags:
       - Authentication
@@ -1251,6 +1270,9 @@ paths:
     post:
       consumes:
       - application/json
+      description: Registers a new user with name, email, and password. Sends a verification
+        email.
+      operationId: signUp
       parameters:
       - description: Signup request body
         in: body
@@ -1264,46 +1286,41 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Sign up with email and password
       tags:
       - Authentication
   /auth/status:
     get:
+      description: Checks if the user is authenticated by verifying their refresh
+        token cookie.
+      operationId: authStatus
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: boolean
-            type: object
+            $ref: '#/definitions/auth.StatusResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Check authentication status
       tags:
       - Authentication
   /auth/verify/{code}:
     get:
+      description: Verifies a user's email using a code from the verification link.
+      operationId: verifyEmail
       parameters:
       - description: Verification code
         in: path
@@ -1320,15 +1337,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/lib.ErrorResponse'
       summary: Verify user email
       tags:
       - Authentication

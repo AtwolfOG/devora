@@ -24,16 +24,18 @@ type CreateQuestionRequest struct {
 // CreateQuestion godoc
 //
 // @Summary Create a question in a room
+// @Description Adds a new scheduled coding/interview question to a pending interview room.
+// @ID createQuestion
 // @Tags Questions
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param request body CreateQuestionRequest true "Create question request body"
-// @Success 201 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 201 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions [post]
 func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	var req CreateQuestionRequest
@@ -135,14 +137,16 @@ func CreateQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 // GetRoomQuestions godoc
 //
 // @Summary Get questions for a room
+// @Description Returns the list of scheduled questions in a specific room, filtering by participant state if appropriate.
+// @ID getRoomQuestions
 // @Tags Questions
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
-// @Success 200 {object} map[string]any
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} QuestionsResponseDTO
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions [get]
 func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
@@ -234,14 +238,16 @@ func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Con
 // PassQuestion godoc
 //
 // @Summary Mark a question as passed
+// @Description Updates a room question status to passed.
+// @ID passQuestion
 // @Tags Questions
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param question_id path integer true "Question ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions/{question_id}/pass [patch]
 func PassQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")
@@ -278,14 +284,16 @@ func PassQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // FailQuestion godoc
 //
 // @Summary Mark a question as failed
+// @Description Updates a room question status to failed.
+// @ID failQuestion
 // @Tags Questions
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param question_id path integer true "Question ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions/{question_id}/fail [patch]
 func FailQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")
@@ -322,15 +330,17 @@ func FailQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // DeleteQuestion godoc
 //
 // @Summary Delete a question from a room
+// @Description Removes a scheduled question from a pending interview room.
+// @ID deleteQuestion
 // @Tags Questions
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param question_id path integer true "Question ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions/{question_id} [delete]
 func DeleteQuestion(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionId := r.PathValue("question_id")

@@ -17,16 +17,19 @@ import (
 // SubmitAnswer godoc
 //
 // @Summary Submit an answer for a question
+// @Description Saves a free-text question answer for an interview candidate.
+// @ID submitAnswer
 // @Tags Answers
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param question_id path integer true "Question ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param request body SubmitAnswerRequest true "Submit answer request body"
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions/{question_id}/answer [post]
 func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
@@ -104,16 +107,19 @@ func SubmitAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // SubmitCode godoc
 //
 // @Summary Submit code for a question
+// @Description Saves a code snippet answer for a scheduled room question.
+// @ID submitCode
 // @Tags Answers
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param question_id path integer true "Question ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Param request body SubmitCodeRequest true "Submit code request body"
+// @Success 200 {object} lib.MessageResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 401 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions/{question_id}/code [post]
 func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
@@ -211,14 +217,16 @@ func SubmitCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // GetAnswer godoc
 //
 // @Summary Get answer for a question
+// @Description Returns the saved free-text answer for a scheduled room question.
+// @ID getAnswer
 // @Tags Answers
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param question_id path integer true "Question ID"
-// @Success 200 {object} database.Answer
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} AnswerDTO
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions/{question_id}/answer [get]
 func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")
@@ -258,14 +266,16 @@ func GetAnswer(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // GetCode godoc
 //
 // @Summary Get code for a question
+// @Description Returns the saved code snippet for a scheduled room question.
+// @ID getCode
 // @Tags Answers
 // @Produce json
 // @Security BearerAuth
 // @Param room_id path string true "Room ID"
 // @Param question_id path integer true "Question ID"
-// @Success 200 {object} database.CodeSnippet
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} CodeSnippetDTO
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/rooms/{room_id}/questions/{question_id}/code [get]
 func GetCode(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	questionIdParam := r.PathValue("question_id")

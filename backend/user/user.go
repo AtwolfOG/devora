@@ -15,12 +15,14 @@ import (
 // GetDashboardStat godoc
 //
 // @Summary Get dashboard statistics
+// @Description Returns stats like total interview count, upcoming count, completed count and pass rate for the current user.
+// @ID getDashboardStat
 // @Tags Users
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]any
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} UserDashboardStats
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/users/dashboard [get]
 func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
@@ -94,12 +96,14 @@ func GetDashboardStat(w http.ResponseWriter, r *http.Request, cfg *config.Config
 // GetUserData godoc
 //
 // @Summary Get current user profile
+// @Description Returns the profile username, email, and picture URL for the authenticated user.
+// @ID getUserData
 // @Tags Users
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]any
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} UserProfileResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/users/profile [get]
 func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
@@ -124,13 +128,15 @@ func GetUserData(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // GetUser godoc
 //
 // @Summary Get user by ID
+// @Description Returns public profile details of a user by UUID.
+// @ID getUser
 // @Tags Users
 // @Produce json
 // @Security BearerAuth
 // @Param user_id path string true "User ID"
-// @Success 200 {object} map[string]any
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} UserProfileResponse
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/users/{user_id} [get]
 func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userIdParam := r.PathValue("user_id")
@@ -160,12 +166,14 @@ func GetUser(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 // GetSettings godoc
 //
 // @Summary Get user OAuth settings
+// @Description Returns OAuth configuration statuses for the authenticated user.
+// @ID getSettings
 // @Tags Users
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]any
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} map[string]UserOauthSetting
+// @Failure 400 {object} lib.ErrorResponse
+// @Failure 500 {object} lib.ErrorResponse
 // @Router /api/users/settings [get]
 func GetSettings(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	userId, err := auth.GetIdFromReqCtx(r)
