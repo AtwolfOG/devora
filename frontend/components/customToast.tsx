@@ -11,7 +11,7 @@ export default class customToast{
 			},
 		})
 	}
-	static error(message: string, onClick?: () => void = () => {}){
+	static error(message: string, onClick: () => void | null = null){
 		toast.error(message, {
 			style: {
 				background: "hsla(from var(--destructive) h s l / 0.8)",
@@ -19,10 +19,10 @@ export default class customToast{
                 border: "1px solid var(--border)!important",
 				opacity: "0.8",
 			},
-			action: {
+			action: onClick ? {
 				label: "Retry",
 				onClick
-			}
+			} : undefined
 		})
 	}
 	static loading(message: string){
