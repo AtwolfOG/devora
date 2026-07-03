@@ -9,19 +9,19 @@ import axios, {
 let access_token: string = "";
 let tokenPromise: Promise<string> | null = null;
 
-const googleCallbackPath = "/auth/callback/google";
-const githubCallbackPath = "/auth/callback/github";
+const callbackPath = "/auth/callback/";
 const refreshPath = "/auth/refresh";
 const loginPath = "/auth/login";
 const signupPath = "/auth/signup";
 const verifyPath = "/auth/verify";
+const linkPath = "/auth/link";
 const excludePaths = [
-  googleCallbackPath,
-  githubCallbackPath,
+  callbackPath,
   refreshPath,
   loginPath,
   signupPath,
   verifyPath,
+  linkPath,
 ]
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
@@ -33,8 +33,6 @@ export const api = axios.create({
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     if (excludePaths.some((path) => config.url?.includes(path))) return config;
-    if (config.url?.includes("/auth")) return config;
-    console.log("request: ", config);
     const token = await getAccessToken();
     
     // attach access token automatically
