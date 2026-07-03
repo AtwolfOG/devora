@@ -7,14 +7,21 @@ import axios, {
 
 
 let access_token: string = "";
+let tokenPromise: Promise<string> | null = null;
 
+const googleCallbackPath = "/auth/callback/google";
+const githubCallbackPath = "/auth/callback/github";
+const refreshPath = "/auth/refresh";
+const loginPath = "/auth/login";
+const signupPath = "/auth/signup";
+const verifyPath = "/auth/verify";
 const excludePaths = [
-  "/auth/callback/google",
-  "/auth/callback/github",
-  "/auth/refresh",
-  "/auth/login",
-  "/auth/signup",
-  "/auth/verify",
+  googleCallbackPath,
+  githubCallbackPath,
+  refreshPath,
+  loginPath,
+  signupPath,
+  verifyPath,
 ]
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
@@ -23,18 +30,15 @@ export const api = axios.create({
 });
 
 
-export function getAccessToken(){
-  return access_token;
-}
-
 api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     if (excludePaths.some((path) => config.url?.includes(path))) return config;
-    const token = access_token;
+    if (config.url?.includes("/auth")) return config;
+    console.log("request: ", config);
+    const token = await getAccessToken();
+    
     // attach access token automatically
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    config.headers.Authorization = `Bearer ${token}`;
 
     return config;
   },
@@ -44,33 +48,35 @@ api.interceptors.request.use(
   }
 );
 
-// REFRESH LOGIC
-let isRefreshing = false;
+// get access token 
+export async function getAccessToken(): Promise<string> {
+  if (access_token) {
+    return access_token;
+  }
 
-let failedQueue: {
-  resolve: (token: string) => void;
-  reject: (error: unknown) => void;
-}[] = [];
+  if (tokenPromise) {
+    return tokenPromise;
+  }
+  tokenPromise = (async () => {
+    try {
+      const response = await api.post(refreshPath);
 
-function processQueue(
-  error: unknown,
-  token: string | null = null
-) {
-  failedQueue.forEach((promise) => {
-    if (error) {
-      promise.reject(error);
-    } else if (token) {
-      promise.resolve(token);
+      access_token = response.data.access_token;
+
+      return access_token;
+    } finally {
+      tokenPromise = null;
     }
-  });
+  })();
 
-  failedQueue = [];
+  return tokenPromise;
 }
 
 // RESPONSE INTERCEPTOR
 
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    // TODO: remove this
     console.log("response: ", response);
     if (
       response.data?.accessToken &&
@@ -101,48 +107,15 @@ api.interceptors.response.use(
 
     originalRequest._retry = true;
 
-    // IF REFRESH ALREADY RUNNING
+        try {
+        access_token = "";
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({
-          resolve: (token: string) => {
-            originalRequest.headers.Authorization =
-              `Bearer ${token}`;
+        const token = await getAccessToken();
 
-            resolve(api(originalRequest));
-          },
+        originalRequest.headers.Authorization = `Bearer ${token}`;
 
-          reject: (err) => {
-            reject(err);
-          },
-        });
-      });
-    }
+        return api(originalRequest);
 
-    // START REFRESH
-    isRefreshing = true;
-
-    try {
-      // refresh token cookie automatically sent
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/refresh`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
-
-      access_token = response.data.access_token;
-
-      // update queued requests
-      processQueue(null, access_token);
-
-      // retry original request
-      originalRequest.headers.Authorization =
-        `Bearer ${access_token}`;
-
-      return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError, null);
       // logout user
