@@ -46,7 +46,7 @@ export function YourInterviews(){
                         try{
                             const user = await api.get(`/api/users/${room.participant_id}`);
                             candidate = user.data.username;
-                        } catch (e: any) {
+                        } catch{
                             candidate = "Unknown"
                         }
                     }
@@ -80,7 +80,7 @@ export function YourInterviews(){
                     <div className="flex justify-center items-center"><Loader2 className="animate-spin" /></div> 
                     :
                     error ? 
-                    <div className="flex flex-col justify-center items-center"><p className="text-(--text-secondary) text-sm!">An error occurred while fetching interviews.</p><button className="text-(--text-secondary) text-sm cursor-pointer hover:underline" onClick={() => {getData(); setError(null)}}>Try again</button></div> 
+                    <div className="flex flex-col justify-center items-center"><p className="text-(--text-secondary) text-sm!">An error occurred while fetching interviews.</p><button className="text-(--text-secondary) text-sm cursor-pointer hover:underline" onClick={() => {setError(null); getData(); }}>Try again</button></div> 
                     :
                     interviews && interviews.length > 0 ? 
                     <Table className="border border-(--border)">
@@ -157,38 +157,38 @@ export function OtherInterviews(){
     const [interviews, setInterviews] = useState<otherInterview[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-        const getData = async () => {
-            try {
-                // TODO: Fix endpoint
-                setLoading(true);
-                const res = await api.get<Room[]>("/api/rooms?type=participant");
-                const data = res.data.map(async (room: Room) => {
-                    let interviewer = "Error"
-                    try{
-                        const user = await api.get(`/api/users/${room.owner_id}`);
-                        interviewer = user.data.username;
-                    } catch (e: any) {
-                        interviewer = "Error"
-                    }
-                            return {
-                            id: room.id,
-                            company: room.company,
-                            role: room.role,
-                            date: new Date(room.start_time).toLocaleDateString(),
-                            time: new Date(room.start_time).toLocaleTimeString(),
-                            interviewer: interviewer,
-                            status: room.status
-                        }
-                })
-                setInterviews(await Promise.all(data));
-            } catch (error) {
-                if (axios.isAxiosError(error)) {
-                    setError(error.response?.data.error || "An error occurred");
+    const getData = async () => {
+        try {
+            // TODO: Fix endpoint
+            setLoading(true);
+            const res = await api.get<Room[]>("/api/rooms?type=participant");
+            const data = res.data.map(async (room: Room) => {
+                let interviewer = "Error"
+                try{
+                    const user = await api.get(`/api/users/${room.owner_id}`);
+                    interviewer = user.data.username;
+                } catch {
+                    interviewer = "Error"
                 }
-            } finally {
-                setLoading(false);
+                        return {
+                        id: room.id,
+                        company: room.company,
+                        role: room.role,
+                        date: new Date(room.start_time).toLocaleDateString(),
+                        time: new Date(room.start_time).toLocaleTimeString(),
+                        interviewer: interviewer,
+                        status: room.status
+                    }
+            })
+            setInterviews(await Promise.all(data));
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                setError(error.response?.data.error || "An error occurred");
             }
+        } finally {
+            setLoading(false);
         }
+    }
     useEffect(() => {
         getData();
     }, [])
@@ -199,7 +199,7 @@ export function OtherInterviews(){
                     <div className="flex justify-center items-center"><Loader2 className="animate-spin" /></div> 
                     :
                     error ? 
-                    <div className="flex flex-col justify-center items-center"><p className="text-(--text-secondary) text-sm!">An error occurred while fetching interviews.</p><button className="text-(--text-secondary) text-sm cursor-pointer hover:underline" onClick={() => {getData(); setError(null)}}>Try again</button></div> 
+                    <div className="flex flex-col justify-center items-center"><p className="text-(--text-secondary) text-sm!">An error occurred while fetching interviews.</p><button className="text-(--text-secondary) text-sm cursor-pointer hover:underline" onClick={() => {setError(null); getData(); }}>Try again</button></div> 
                     :
                     interviews && interviews.length > 0 ? 
                     <div className="my-4">
