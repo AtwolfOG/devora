@@ -204,6 +204,11 @@ func GetRoomQuestions(w http.ResponseWriter, r *http.Request, cfg *config.Config
 }
 
 func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	userId, err := auth.GetIdFromReqCtx(r)
+	if err != nil {
+		lib.WriteError(w, http.StatusUnauthorized, "You are not authorized to perform this action")
+		return
+	}
 	questionId := r.PathValue("question_id")
 	roomId := r.PathValue("room_id")
 	if questionId == "" || roomId == "" {
@@ -224,9 +229,20 @@ func GetRoomQuestionByID(w http.ResponseWriter, r *http.Request, cfg *config.Con
 		lib.WriteError(w, http.StatusBadRequest, "Failed to parse room id")
 		return
 	}
+	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
+	if err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		return
+	}
+	if room.OwnerID != userId || 
+	(room.ParticipantID.Valid && room.ParticipantID.UUID != userId && 
+	(room.Status != database.RoomStatusPending && room.Status != database.RoomStatusCancelled)) {
+		lib.WriteError(w, http.StatusUnauthorized, "You are not authorized to get this question")
+		return
+	}
 	question, err := cfg.DB.GetQuestionByID(r.Context(), database.GetQuestionByIDParams{
 		ID:     int32(questionIdInt),
-		RoomID: roomUUID,
+		RoomID: room.ID,
 	})
 	if err != nil {
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get question")
