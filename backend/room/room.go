@@ -3,6 +3,7 @@ package room
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -118,6 +119,10 @@ func GetRoomByID(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			lib.WriteError(w, http.StatusNotFound, "Room not found")
+			return
+		}
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
@@ -412,7 +417,11 @@ func AddParticipantToRoom(w http.ResponseWriter, r *http.Request, cfg *config.Co
 	// check if user is already a member of the room
 	room, err := dbqueries.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		if errors.Is(err, sql.ErrNoRows) {
+			lib.WriteError(w, http.StatusBadRequest, "Failed to join room")
+			return
+		}
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to join room")
 		return
 	}
 	if room.OwnerID == userId {
@@ -469,6 +478,10 @@ func RemoveParticipantFromRoom(w http.ResponseWriter, r *http.Request, cfg *conf
 	}
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			lib.WriteError(w, http.StatusBadRequest, "Failed to remove participant from room")
+			return
+		}
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
 		return
 	}
@@ -553,7 +566,11 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	// check if user is the owner of the room
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		if errors.Is(err, sql.ErrNoRows) {
+			lib.WriteError(w, http.StatusBadRequest, "Failed to update room")
+			return
+		}
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to update room")
 		return
 	}
 	if room.OwnerID != userId {
@@ -663,7 +680,11 @@ func RescheduleRoom(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	// check if user is the owner of the room
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		if errors.Is(err, sql.ErrNoRows) {
+			lib.WriteError(w, http.StatusBadRequest, "Failed to reschedule room")
+			return
+		}
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to reschedule room")
 		return
 	}
 	if room.OwnerID != userId {
@@ -741,7 +762,11 @@ func SubmitFeedback(w http.ResponseWriter, r *http.Request, cfg *config.Config) 
 	}
 	room, err := cfg.DB.GetRoomByID(r.Context(), roomUUID)
 	if err != nil {
-		lib.WriteError(w, http.StatusInternalServerError, "Failed to get room")
+		if errors.Is(err, sql.ErrNoRows) {
+			lib.WriteError(w, http.StatusBadRequest, "Failed to submit feedback")
+			return
+		}
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to submit feedback")
 		return
 	}
 	if room.OwnerID != userId {
