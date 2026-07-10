@@ -8,8 +8,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
-import type { Room } from "@/lib/types";
+import type { Participant, Room } from "@/lib/types";
 import ActionsCard from "./actions";
+import Image from "next/image";
 
 type RoomData = Room & {
     is_owner: boolean
@@ -20,7 +21,8 @@ export default function InterviewPage() {
     const [data, setData] = useState<RoomData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(false)
-        const { id } = useParams<{ id: string }>()
+    const { id } = useParams<{ id: string }>()
+    useEffect(() => {
         const fetchRoom: () => Promise<void> = async () => {
             try {
                 setLoading(true)
@@ -34,24 +36,23 @@ export default function InterviewPage() {
                     throw new Error("Room not found");
                 }
                 setData(data)
-            } catch (error) {
+            } catch {
                 setError(true);
             } finally {
                 setLoading(false);
             }
         }
-        useEffect(() => {
-            fetchRoom();
-        }, [id])
-        if (loading) {
-            return  <Loader2 className="animate-spin text-(--text-secondary) my-8 m-auto" />
-        }
-        if (error) {
-            return <div className="flex items-center justify-center h-full"><p className="text-(--text-secondary)">Error fetching room data</p></div>
-        }
-        if (!data) {
-            return <div className="flex items-center justify-center h-full"><p className="text-(--text-secondary)">Room not found</p></div>
-        }
+        fetchRoom();
+    }, [id])
+    if (loading) {
+        return  <Loader2 className="animate-spin text-(--text-secondary) my-8 m-auto" />
+    }
+    if (error) {
+        return <div className="flex items-center justify-center h-full"><p className="text-(--text-secondary)">Error fetching room data</p></div>
+    }
+    if (!data) {
+        return <div className="flex items-center justify-center h-full"><p className="text-(--text-secondary)">Room not found</p></div>
+    }
 	return (
 		<div className="@4xl:grid @4xl:grid-cols-2 @4xl:gap-4">
 			<div className="@4xl:col-span-1">
@@ -90,25 +91,25 @@ function Invite({isOwner, participantId}:{
     const [link, setLink] = useState("")
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(false)
-    const [participant, setParticipant] = useState<any>(null)
-    const fetchParticipant = async () => {
-        if (participantId == null || participantId == "")  {
-            return
-        }
-        try {
-            setLoading(true)
-            const response = await api.get<User>(`/api/users/${participantId}`)
-            setParticipant(response.data)
-        } catch (error) {
-            setError(true)
-        } finally {
-            setLoading(false)
+    const [participant, setParticipant] = useState<Participant>(null)
+    useEffect(()=>{
+        const fetchParticipant = async () => {
+            if (participantId == null || participantId == "")  {
+                return
+            }
+            try {
+                setLoading(true)
+                const response = await api.get<User>(`/api/users/${participantId}`)
+                setParticipant(response.data)
+            } catch {
+                setError(true)
+            } finally {
+                setLoading(false)
         }
     }
-    useEffect(()=>{
         fetchParticipant()
         setLink(`${window.location.href}`)
-    },[])
+    },[participantId])
     
     return (
         isOwner?
@@ -121,7 +122,7 @@ function Invite({isOwner, participantId}:{
                 <>
                     <h5>Participant:</h5>
                     <div className="flex items-center gap-4">
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden"><img src={participant.profile_picture_url} alt={participant.username} className="w-12 h-12 rounded-full object-cover" /> </div>
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden"><Image width={48} height={48} src={participant.profile_picture_url} alt={participant.username} className="w-12 h-12 rounded-full object-cover" /> </div>
                         <div className="flex flex-col gap-2">
                             <h4 className=" text-xl!">Interview with {participant.username}</h4>
                             <p className="text-(--text-secondary)">{participant.email}</p>
@@ -134,15 +135,15 @@ function Invite({isOwner, participantId}:{
             <button onClick={()=> copyToClipboard(link)} className="flex items-center gap-2 bg-(--bg-cta)/50 hover:bg-(--bg-cta)/60 text-(--text-cta) px-4 py-2 rounded-lg"><Copy /> Copy link</button>
         </div>
         :
-        <div className="my-6 bg-(--bg-muted)/60 border-(--border) border rounded-lg p-6">
+        participant && <div className="my-6 bg-(--bg-muted)/60 border-(--border) border rounded-lg p-6">
         {
             loading ? <Loader2 className="animate-spin text-(--text-secondary)" />:
             error ? <p className="text-(--text-secondary)">Error fetching participant</p>:
-            participant && (
+            (
                 <>
                     <h5>Participant:</h5>
                     <div className="flex items-center gap-4">
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden"><img src={participant.profile_picture_url} alt={participant.username} className="w-12 h-12 rounded-full object-cover" /> </div>
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden"><Image width={48} height={48} src={participant.profile_picture_url} alt={participant.username} className="w-12 h-12 rounded-full object-cover" /> </div>
                         <div className="flex flex-col gap-2">
                             <h4 className=" text-xl!">Interview with {participant.username}</h4>
                             <p className="text-(--text-secondary)">{participant.email}</p>

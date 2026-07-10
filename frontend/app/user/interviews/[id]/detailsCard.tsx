@@ -2,7 +2,7 @@
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { FieldValues, useForm } from "react-hook-form";
 import SubmitBtn from "@/components/submit";
 import { api } from "@/lib/api";
@@ -19,17 +19,17 @@ export function DetailsCard({ roomData }: { roomData: RoomData }) {
     const [calendarOpen, setCalendarOpen] = useState(false)
     const date = getValues("date")
     const disabled = roomData.status != "pending" || !roomData.is_owner
-    const setDetails = () => {
+    const setDetails = useCallback(() => {
         setValue("role", roomData.role);
         setValue("company", roomData.company);
         setValue("description", roomData.description);
         const start_time = new Date(roomData.start_time);
         setValue("date", start_time);
         setValue("time", start_time.toLocaleTimeString([],{ hour: "2-digit", minute: "2-digit", hour12: false}));
-    }
+    }, [roomData, setValue])
     useEffect(() => {
         setDetails();
-    }, [roomData])
+    }, [setDetails])
 
     const onSubmit = async (data: FieldValues) => {
         try {
@@ -44,7 +44,7 @@ export function DetailsCard({ roomData }: { roomData: RoomData }) {
                 throw new Error("Failed to update interview");
             }
             customToast.success("Interview details updated successfully");
-        } catch (error) {
+        } catch {
             customToast.error("failed to update interview details")
         }
     }
@@ -82,7 +82,7 @@ export function DetailsCard({ roomData }: { roomData: RoomData }) {
                                     captionLayout="dropdown"
                                     // defaultMonth={date}
                                     onSelect={(date) => {
-                                        setCalendarOpen(false)
+                                        setCalendarOpen(false);
                                         date && setValue("date", date)
                                     }}
                                 />

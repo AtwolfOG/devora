@@ -56,7 +56,7 @@ async function deleteProblem(roomId: string, id: string, setProblems: (problems:
         await api.delete(`/api/rooms/${roomId}/questions/${id}`);
         setProblems((prev) => prev.filter((p) => p.id !== id));
         customToast.success("Problem deleted successfully");
-    }catch(error){
+    }catch{
         customToast.error("Failed to delete problem");
     }
 }
@@ -71,13 +71,13 @@ export function ProblemsCard({id, isOwner}: {id: string, isOwner: boolean}){
                 const res = await api.get(`/api/rooms/${id}/questions`);
                 const questions = res.data.questions;
                 setProblems(questions);
-            }catch(error){
+            }catch{
                 setError("Failed to fetch problems");
             }
             finally{
                 setLoading(false);
             }
-        },[])
+        },[id])
     useEffect(() => {
        fetchProblems();
     }, [fetchProblems]);
@@ -126,7 +126,7 @@ function AddProblemModal({fetchProblems}: {fetchProblems: () => void}){
             await api.post(`/api/rooms/${id}/questions`, question);
             fetchProblems();
             customToast.success("Problem added successfully");
-        }catch(error){
+        }catch{
             customToast.error("Failed to add problem");
         }
     }
