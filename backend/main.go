@@ -101,8 +101,14 @@ func main() {
 	roomRouter.Delete("/{room_id}/questions/{question_id}", configWrapper(config, room.DeleteQuestion))
 	roomRouter.Patch("/{room_id}/questions/{question_id}/pass", configWrapper(config, room.PassQuestion))
 	roomRouter.Patch("/{room_id}/questions/{question_id}/fail", configWrapper(config, room.FailQuestion))
+	roomRouter.Get("/{room_id}/call", configWrapper(config, room.CreateCall))
 	apiRouter.Mount("/rooms", roomRouter)
 	r.Mount("/api", apiRouter)
+
+	// websocket router
+	websocketRouter := chi.NewRouter()
+	websocketRouter.Get("/rooms/{room_id}/call", configWrapper(config, room.CreateCall))
+	r.Mount("/ws", websocketRouter)
 
 	r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
 	log.Println("Server started on port " + config.Port)

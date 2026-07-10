@@ -442,6 +442,10 @@ func AddParticipantToRoom(w http.ResponseWriter, r *http.Request, cfg *config.Co
 		lib.WriteError(w, http.StatusInternalServerError, "Failed to join room")
 		return
 	}
+	if err := tx.Commit(); err != nil {
+		lib.WriteError(w, http.StatusInternalServerError, "Failed to join room")
+		return
+	}
 	lib.WriteJSON(w, http.StatusOK, map[string]string{"message": "Room joined successfully"})
 }
 
