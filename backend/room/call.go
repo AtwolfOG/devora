@@ -17,6 +17,7 @@ import (
 type user_t struct {
 	id   uuid.UUID
 	conn *websocket.Conn
+	send chan message_t
 }
 
 type state_t struct {
@@ -42,6 +43,29 @@ var upgrader = websocket.Upgrader{
 }
 
 var rooms = make(map[uuid.UUID]*room_t)
+
+func (u *user_t) writePump() {
+	defer func() {
+		if u.conn != nil {
+			u.conn.Close()
+		}
+	}()
+	for {
+		msg, ok := <-u.send
+		if !ok {
+			// Channel closed, close the websocket
+			return
+		}
+		// Write the message as JSON
+		if u.conn == nil {
+			return
+		}
+		if err := u.conn.WriteJSON(msg); err != nil {
+			fmt.Println("writePump error:", err)
+			break
+		}
+	}
+}
 
 func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	roomId := r.PathValue("room_id")
@@ -83,12 +107,7 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		conn.Close()
 		return
 	}
-	isOwnerClaim, ok := joinPayload["is_owner"].(bool)
-	if !ok {
-		writeErrorToConn(conn, "Invalid is owner")
-		conn.Close()
-		return
-	}
+	
 
 	user, err := auth.VerifyJWT(accessToken, cfg.JWTSecret)
 	if err != nil {
@@ -129,12 +148,7 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 	// check if is owner
 	isOwner := dbRoom.OwnerID.String() == userId.String()
-	// check if is owner claim matches
-	if isOwner != isOwnerClaim {
-		writeErrorToConn(conn, "Invalid request")
-		conn.Close()
-		return
-	}
+	
 	room, ok := rooms[roomUUID]
 	if !ok {
 		room = &room_t{
@@ -147,27 +161,56 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		rooms[roomUUID] = room
 	}
 	if isOwner {
-		if room.owner.conn != nil {
+		if room.owner != nil && room.owner.conn != nil {
 			room.owner.conn.Close()
 		}
 		room.owner = &user_t{
 			id:   userId,
 			conn: conn,
+			send: make(chan message_t, 256),
+		}
+		go room.owner.writePump()
+
+		// check if call has been started and participant is online
+		if room.state.started && room.participant != nil && room.participant.conn != nil {
+			writeMessage(message_t{
+				Type:    "triggered",
+				Payload: nil,
+			}, room, isOwner)
+			writeMessage(message_t{ Type: "trigger", Payload: nil}, room, !isOwner)
 		}
 	} else {
-		if room.participant.conn != nil {
+		// check if call has been started and owner is online
+		if room.state.started && room.owner != nil && room.owner.conn != nil {
+			writeMessage(message_t{
+				Type:    "trigger",
+				Payload: nil,
+			}, room, isOwner)
+			writeMessage(message_t{ Type: "triggered", Payload: nil}, room, !isOwner)
+		}
+		if room.participant != nil && room.participant.conn != nil {
 			room.participant.conn.Close()
 		}
 		room.participant = &user_t{
 			id:   userId,
 			conn: conn,
+			send: make(chan message_t, 256),
 		}
+		go room.participant.writePump()
 	}
 	handleConnection(conn, room, isOwner, cfg.DB)
 
 }
 
 func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *database.Queries) {
+	left := func (){
+		writeMessage(message_t{
+			Type: "left",
+			Payload: nil,
+		}, room, isOwner)
+	}
+	defer left()
+	offlineTick := time.AfterFunc(time.Minute * 6, left)
 	for {
 		var msg message_t
 		err := conn.ReadJSON(&msg)
@@ -176,19 +219,20 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 		}
 		switch msg.Type {
 		case "start":
-			if room.state.started {
-				writeMessage(message_t{
-					Type:    "started",
-					Payload: nil,
-				}, room, isOwner)
-				// writeMessage(message_t{
-				// 	Type:    "started",
-				// 	Payload: nil,
-				// }, room, !isOwner)
-				// continue
-			}
 			if !isOwner {
 				fmt.Println("Not owner tried to start call")
+				continue
+			}
+
+			if room.state.started {
+				writeMessage(message_t{
+					Type:    "triggered",
+					Payload: nil,
+				}, room, isOwner)
+				writeMessage(message_t{
+					Type:    "trigger",
+					Payload: nil,
+				}, room, !isOwner)
 				continue
 			}
 
@@ -204,13 +248,13 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 				continue
 			}
 			writeMessage(message_t{
-				Type:    "started",
+				Type:    "triggered",
 				Payload: nil,
 			}, room, isOwner)
-			// writeMessage(message_t{
-			// 	Type:    "started",
-			// 	Payload: nil,
-			// }, room, !isOwner)
+			writeMessage(message_t{
+				Type:    "trigger",
+				Payload: nil,
+			}, room, !isOwner)
 
 			room.state.started = true
 
@@ -238,20 +282,34 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 				Payload: nil,
 			}, room, !isOwner)
 			delete(rooms, room.id)
-			room.owner.conn.Close()
-			room.participant.conn.Close()
+			if room.owner != nil {
+				room.owner.conn.Close()
+			}
+			if room.participant != nil {
+				room.participant.conn.Close()
+			}
 			room.state.ended = true
 
-		case "join":
-			
+		case "leave":
+			writeMessage(message_t{
+				Type: "user_left",
+				Payload: nil,
+			}, room, isOwner)
+
+
+		case "online":
+			// reset offlineTick and send user_online tick to user
+			offlineTick.Reset(time.Minute * 6)
+			writeMessage(message_t{
+				Type: "user_online",
+				Payload: nil,
+			}, room, isOwner)
 
 		case "offer":
 			fallthrough
 		case "answer":
 			fallthrough
-		case "candidate":
-			fallthrough
-		case "leave":
+		case "ice_candidate":
 			fallthrough
 		case "edit":
 			writeMessage(msg, room, isOwner)
@@ -264,22 +322,17 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 
 func writeMessage(msg message_t, room *room_t, isOwner bool) {
 	if isOwner {
-		if room.participant.conn != nil {
-			err := room.participant.conn.WriteJSON(msg)
-			if err != nil {
-				fmt.Println("Failed to write message")
-			}
+		if room.participant != nil {
+			room.participant.send <- msg
 		}
 	} else {
-		if room.owner.conn != nil {
-			err := room.owner.conn.WriteJSON(msg)
-			if err != nil {
-				fmt.Println("Failed to write message")
-			}
+		if room.owner != nil  {
+			room.owner.send <- msg
 		}
 	}
 }
 
+// this function should only be used when authenticating the user, it should not be called after writePump
 func writeErrorToConn(conn *websocket.Conn, msg string) {
 	fmt.Println("Writing error message to conn:", msg)
 	err := conn.WriteJSON(message_t{
