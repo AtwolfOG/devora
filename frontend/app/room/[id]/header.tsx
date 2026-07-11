@@ -1,10 +1,10 @@
-import { useRoomData } from "./context";
+import { useRoom } from "./context";
 import { Clock } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState, useEffect } from "react";
 
 export default function Header(){
-    const {room} = useRoomData();
+    const {room} = useRoom();
     if (!room) return null;
     const startTime = new Date(room.started_at.Time);
     return (

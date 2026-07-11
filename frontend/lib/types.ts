@@ -69,4 +69,11 @@ type CodeSnippet = {
 	updatedAt:  string
 }
 
-export type { Room, User, Question, Answer, CodeSnippet }
+type Participant = {
+    id: string
+    email: string
+    username: string
+    profile_picture_url: string
+}
+
+export type { Room, User, Question, Answer, CodeSnippet, Participant }

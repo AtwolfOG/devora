@@ -105,17 +105,16 @@ api.interceptors.response.use(
 
     originalRequest._retry = true;
 
-        try {
-        access_token = "";
+    try {
+      access_token = "";
 
-        const token = await getAccessToken();
+      const token = await getAccessToken();
 
-        originalRequest.headers.Authorization = `Bearer ${token}`;
+      originalRequest.headers.Authorization = `Bearer ${token}`;
 
-        return api(originalRequest);
+      return api(originalRequest);
 
     } catch (refreshError) {
-      processQueue(refreshError, null);
       // logout user
       window.location.href = "/auth/login";
       return Promise.reject(refreshError);
