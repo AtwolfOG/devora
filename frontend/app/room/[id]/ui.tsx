@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 export function UI(){
     const [isUserJoined, setIsUserJoined] = useState(false);
     const isMobile = useCheckWindowDimension(1024);
-    const {loading, room: roomData} = useRoom();
+    const {loading, room: roomData, roomInstance} = useRoom();
     if (loading) {
         return 
             <div className="flex justify-center items-center h-full"><LoaderIcon className="animate-spin" /></div> 
@@ -82,23 +82,25 @@ function CallUI(){
     const [ videoEnabled, setVideoEnabled ] = useState(true);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-    const {room: roomData, refetchRoom, roomInstance} = useRoom();
-    const [isCallStarting, setIsCallStarting] = useState(false);
-    const [isCallStarted, setIsCallStarted] = useState(false);
+    const {room: roomData, roomInstance} = useRoom();
     const [userStatusOnline, setUserStatusOnline] = useState(false);
 
     // set room instance event listeners
     useEffect(() => {
       if (!roomInstance) return;
         roomInstance.onRemoteStream = (stream) => setRemoteStream(stream);
-        roomInstance.onLocalStream = (stream) => setLocalStream(stream);
+        roomInstance.onLocalStream = (stream) => setLocalStream(stream) && console.log("setting on local stream", stream);
         roomInstance.onUserLeft = () => {
-          setIsCallStarted(false);
-          setIsCallStarting(false);
           setRemoteStream(null);
         }
         roomInstance.onUserStatusChange = (status) => {
             setUserStatusOnline(status == "online")
+        }
+        return () => {
+            roomInstance.onRemoteStream = null;
+            roomInstance.onLocalStream = null;
+            roomInstance.onUserLeft = null;
+            roomInstance.onUserStatusChange = null;
         }
     }, [roomInstance]);
 
@@ -130,51 +132,6 @@ function CallUI(){
         setVideoEnabled(!videoEnabled);
     }, [videoEnabled, roomInstance])
 
-    // start call
-    const startCall = useCallback(async () => {
-        if (!roomInstance) return;
-        try {
-            setIsCallStarting(true);
-            await roomInstance.getMediaStream();
-            await roomInstance.triggerCall();
-            setIsCallStarted(true);
-            await refetchRoom();
-        } catch {
-            customToast.error("Failed to start call");
-        } finally {
-            setIsCallStarting(false);
-        }
-    }, [roomInstance, refetchRoom])
-
-    const joinCall = useCallback(async () => {
-        if (!roomInstance) return;
-        try {
-            setIsCallStarting(true);
-            await roomInstance.getMediaStream();
-            await roomInstance.joinCall();
-            setIsCallStarted(true);
-            await refetchRoom();
-        } catch {
-            customToast.error("Failed to join call");
-        } finally {
-            setIsCallStarting(false);
-        }
-    }, [roomInstance, refetchRoom])
-
-    // start call if roomData?.status == "live"
-    useEffect(() => {
-        if (!roomData) return;
-        if (isCallStarted) return;
-        if (isCallStarting) return;
-        if (roomData?.status == "live") {
-            if (roomData?.is_owner) {
-                startCall();
-            }
-            if (roomData?.is_participant) {
-                joinCall();
-            }
-        }
-    }, [roomData, startCall, joinCall, isCallStarting, isCallStarted])
 
     if (remoteStream) console.log("remote stream is received: ", remoteStream)
     
@@ -195,17 +152,15 @@ function CallUI(){
                         <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg" onClick={startCall}>Start Call</button>
                        <button onClick={() => copyToClipboard(window.location.href)} className="cursor-pointer flex items-center gap-2 px-4 py-2  hover:bg-background/30 text-(--text-secondary)! rounded-lg">Copy Link <Copy size={20}/></button>
                     </div>
-			        {(isCallStarting) && <div className="absolute inset-0 flex items-center justify-center z-1 bg-black/60"><LoaderIcon className="size-5 animate-spin" /></div>}
                 </div>
             )}
             { roomData?.status == "live" && 
             <>
             <div className="h-full flex-1">
                 <div className="flex flex-col justify-center items-center h-full flex-1 w-full">
-                    <UserVideo stream={localStream} id={roomData?.is_owner ? roomData?.owner_id : roomData?.participant_id} online={false} />
-                    {remoteStream && <UserVideo stream={remoteStream} id={roomData?.is_owner ? roomData?.participant_id : roomData?.owner_id} online={userStatusOnline} />}
+                    {localStream && localStream.active && <UserVideo stream={localStream} id={roomData?.is_owner ? roomData?.owner_id : roomData?.participant_id} online={false} />}
+                    {remoteStream && remoteStream.active && <UserVideo stream={remoteStream} id={roomData?.is_owner ? roomData?.participant_id : roomData?.owner_id} online={userStatusOnline} />}
                 </div>
-                <div className="h-[20%] max-h-[150px]"></div>
             </div>
             <div className="flex justify-center gap-4 items-end py-2 bg-(--bg-muted)">
                 <button className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 text-(--text-primary) rounded-lg" onClick={toggleVideo}>{videoEnabled ? <Video size={20}/> : <VideoOff size={20}/>} Video</button>
@@ -439,7 +394,7 @@ function UserVideo({stream, id, online}: {stream: MediaStream, id: string, onlin
     }, [stream])
 
     return (
-        <div className="relative flex w-full h-full max-h-1/2 max-w-[750px]">
+        <div className="relative flex w-full h-full max-h-[45%] max-w-[750px]">
             <div className="relative w-full h-full">
                 <video ref={videoRef} autoPlay muted className="w-full h-full object-cover rounded-lg" />
                 <div className={cn("absolute top-2 right-2", !online && "hidden")}>

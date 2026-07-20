@@ -22,7 +22,7 @@ export function RoomDataProvider({ children }: { children: React.ReactNode }) {
     const fetchRoom = useCallback(async () => {
         try {
             const response = await api.get<Interview>(`/api/rooms/${roomId}`);
-            const roomInstance = await initRoom(response.data?.is_owner, response.data?.id);
+            const roomInstance = await initRoom();
             setRoom(response.data);
             setRoomInstance(roomInstance);
         } catch (error: error) {

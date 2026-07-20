@@ -100,7 +100,12 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	}
 
 	// get access token from first message
-	joinPayload := msg.Payload.(map[string]interface{})
+	joinPayload, ok := msg.Payload.(map[string]interface{})
+	if !ok {
+		writeErrorToConn(conn, "Invalid access token")
+		conn.Close()
+		return
+	}
 	accessToken, ok := joinPayload["access_token"].(string)
 	if !ok {
 		writeErrorToConn(conn, "Invalid access token")
@@ -176,18 +181,11 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			writeMessage(message_t{
 				Type:    "triggered",
 				Payload: nil,
-			}, room, isOwner)
-			writeMessage(message_t{ Type: "trigger", Payload: nil}, room, !isOwner)
+			}, room, true)
+			writeMessage(message_t{ Type: "trigger", Payload: nil}, room, false)
 		}
 	} else {
 		// check if call has been started and owner is online
-		if room.state.started && room.owner != nil && room.owner.conn != nil {
-			writeMessage(message_t{
-				Type:    "trigger",
-				Payload: nil,
-			}, room, isOwner)
-			writeMessage(message_t{ Type: "triggered", Payload: nil}, room, !isOwner)
-		}
 		if room.participant != nil && room.participant.conn != nil {
 			room.participant.conn.Close()
 		}
@@ -197,20 +195,27 @@ func CreateCall(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			send: make(chan message_t, 256),
 		}
 		go room.participant.writePump()
+		if room.state.started && room.owner != nil && room.owner.conn != nil {
+			writeMessage(message_t{
+				Type:    "trigger",
+				Payload: nil,
+			}, room, false)
+			writeMessage(message_t{ Type: "triggered", Payload: nil}, room, true)
+		}
 	}
 	handleConnection(conn, room, isOwner, cfg.DB)
 
 }
 
 func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *database.Queries) {
-	left := func (){
+	offline := func (){
 		writeMessage(message_t{
-			Type: "left",
+			Type: "user_offline",
 			Payload: nil,
 		}, room, isOwner)
 	}
-	defer left()
-	offlineTick := time.AfterFunc(time.Minute * 6, left)
+	defer offline()
+	offlineTick := time.AfterFunc(time.Minute * 6, offline)
 	for {
 		var msg message_t
 		err := conn.ReadJSON(&msg)
@@ -228,33 +233,38 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 				writeMessage(message_t{
 					Type:    "triggered",
 					Payload: nil,
-				}, room, isOwner)
+				}, room, true)
 				writeMessage(message_t{
 					Type:    "trigger",
 					Payload: nil,
-				}, room, !isOwner)
+				}, room, false)
 				continue
 			}
 
 			// start room
+			if room.owner == nil {
+				fmt.Println("Owner not found")
+				continue
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-			defer cancel()
 			err := db.StartRoom(ctx, database.StartRoomParams{
 				ID:      room.id,
 				OwnerID: room.owner.id,
 			})
 			if err != nil {
 				fmt.Println("Failed to update room")
+				cancel()
 				continue
 			}
+			cancel()
 			writeMessage(message_t{
 				Type:    "triggered",
 				Payload: nil,
-			}, room, isOwner)
+			}, room, true)
 			writeMessage(message_t{
 				Type:    "trigger",
 				Payload: nil,
-			}, room, !isOwner)
+			}, room, false)
 
 			room.state.started = true
 
@@ -263,16 +273,21 @@ func handleConnection(conn *websocket.Conn, room *room_t, isOwner bool, db *data
 				fmt.Println("Not owner tried to end call")
 				continue
 			}
+			if room.owner == nil {
+				fmt.Println("Owner not found")
+				continue
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-			defer cancel()
 			err := db.EndRoom(ctx, database.EndRoomParams{
 				ID:      room.id,
 				OwnerID: room.owner.id,
 			})
 			if err != nil {
 				fmt.Println("Failed to end room")
+				cancel()
 				continue
 			}
+			cancel()
 			writeMessage(message_t{
 				Type:    "ended",
 				Payload: nil,

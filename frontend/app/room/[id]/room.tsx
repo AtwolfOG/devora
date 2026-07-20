@@ -10,11 +10,16 @@ export class Room {
   #remoteStream: MediaStream | null;
   #emitOnlineTimeout: NodeJS.Timeout | null;
   #iceCandidate: Array<RTCIceCandidateInit> = [];
+  #isProccessingIce: boolean = false;
+  userStatus: "online" | "offline" = "offline";
   onEndCall?: () => void;
   onUserStatusChange?: (status: "online" | "offline") => void;
   onUserLeft?: () => void;
   onRemoteStream?: (stream: MediaStream) => void;
   onLocalStream?: (stream: MediaStream) => void;
+  #onLocalStream?: (stream: MediaStream) => void;
+  #onRemoteStream?: (stream: MediaStream) => void;
+  waitForJoinCall: Promise<void>;
     constructor(roomId: string, accesstoken: string){
         if (!roomId || !accesstoken) throw new Error("Room ID is required");
         this.roomId = roomId;
@@ -25,7 +30,7 @@ export class Room {
 
     static async create(){
         try {
-            if (!window) return;
+            if (typeof window === "undefined") return;
             const pns = window.location.pathname.split('/')
             const roomId = pns[pns.length - 1]
             const accessToken = await getAccessToken();
@@ -41,7 +46,7 @@ export class Room {
     async triggerCall(){
         if (!this.socket) return;
         if (this.socket.readyState !== WebSocket.OPEN) return;
-        if (this.peerConnection && (this.peerConnection?.connectionState === "connected" || this.peerConnection?.connectionState === "connecting")) return;
+        if (this.peerConnection && (this.peerConnection?.connectionState === "connected" && this.peerConnection?.connectionState === "connecting")) return;
         if (this.peerConnection) {
             this.peerConnection.close();
             this.peerConnection = null;
@@ -72,51 +77,10 @@ export class Room {
                 this.#sendMessage("ice_candidate", event.candidate)
             }
         }
-        pc.onconnectionstatechange = (e) =>{
+        pc.onconnectionstatechange = () =>{
             console.log("peer connection state", pc.connectionState)
-        }
-        // handle remote stream
-        this.peerConnection.ontrack = (event) => {
-          try {
-            console.log("remote track: ", event.track)
-            const [stream] = event.streams;
-            this.remoteStream = stream;
-          } catch {
-            customToast.error("Error getting media stream:", ()=> this.reset());
-          }
-        };
-    }
-
-    async joinCall(){
-        if (!this.socket) return;
-        if (this.socket.readyState !== WebSocket.OPEN) return;
-        if (this.peerConnection && (this.peerConnection?.connectionState === "connected" || this.peerConnection?.connectionState === "connecting")) return;
-        if (this.peerConnection) {
-            this.peerConnection.close();
-            this.peerConnection = null;
-        }
-
-        await this.getMediaStream()
-
-
-        const pc = new RTCPeerConnection( {
-            iceServers: [
-                {
-                    urls: "stun:stun.l.google.com:19302"
-                }
-            ]
-        });
-        this.peerConnection = pc;
-        // add local stream to peer connection
-        this.localStream?.getTracks().forEach((track) => {
-            this.peerConnection?.addTrack(track, this.localStream!);
-        });
-        pc.onconnectionstatechange = (e) =>{
-            console.log("peer connection state", pc.connectionState)
-        }
-        this.peerConnection.onicecandidate = (event) => {
-            if (event.candidate){
-                this.#sendMessage("ice_candidate", event.candidate)
+            if (pc.connectionState !== "connected" && pc.connectionState !== "connecting"){
+                this.remoteStream = null;
             }
         }
         // handle remote stream
@@ -131,15 +95,90 @@ export class Room {
         };
     }
 
+    async joinCall(){
+
+        this.waitForJoinCall = new Promise((async (resolve) => {
+            if (!this.socket) return;
+            if (this.socket.readyState !== WebSocket.OPEN) return;
+            if (this.peerConnection && (this.peerConnection?.connectionState === "connected" && this.peerConnection?.connectionState === "connecting")) return;
+            if (this.peerConnection) {
+                this.peerConnection.close();
+                this.peerConnection = null;
+            }
+
+            await this.getMediaStream()
+
+
+            const pc = new RTCPeerConnection( {
+                iceServers: [
+                    {
+                        urls: "stun:stun.l.google.com:19302"
+                    }
+                ]
+            });
+            this.peerConnection = pc;
+            // add local stream to peer connection
+            this.localStream?.getTracks().forEach((track) => {
+            console.log("attaching local track")
+                this.peerConnection?.addTrack(track, this.localStream!);
+            });
+            pc.onconnectionstatechange = () =>{
+                console.log("peer connection state", pc.connectionState)
+                if (pc.connectionState !== "connected" && pc.connectionState !== "connecting"){
+                    this.remoteStream = null;
+                }
+            }
+            this.peerConnection.onicecandidate = (event) => {
+                if (event.candidate){
+                    this.#sendMessage("ice_candidate", event.candidate)
+                }
+            }
+            // handle remote stream
+            this.peerConnection.ontrack = (event) => {
+            try {
+                console.log("remote track: ", event.track)
+                const [stream] = event.streams;
+                this.remoteStream = stream;
+            } catch {
+                customToast.error("Error getting media stream:", ()=> this.reset());
+            }
+            };
+            resolve()
+        }))
+        await this.waitForJoinCall;
+
+        this.waitForJoinCall = null;
+    }
+
+    set onLocalStream(callback: (stream: MediaStream) => void){
+        this.#onLocalStream = callback;
+        if (this.#localStream){
+            callback(this.#localStream);
+        }
+    }
+
+    set onRemoteStream(callback: (stream: MediaStream | null) => void){
+        this.#onRemoteStream = callback;
+        if (this.#remoteStream){
+            callback(this.#remoteStream);
+        }
+    }
+
+    get onLocalStream(){
+        return this.#onLocalStream;
+    }
+
+    get onRemoteStream(){
+        return this.#onRemoteStream;
+    }
+
     set localStream(stream: MediaStream){
         this.#localStream = stream;
-        console.log("setting local stream")
         this.onLocalStream?.(stream);
     }
 
     set remoteStream(stream: MediaStream | null){
         this.#remoteStream = stream;
-        console.log("remote stream: ", stream)
         this.onRemoteStream?.(stream);
     }
 
@@ -167,16 +206,21 @@ export class Room {
 
     async #handleOffer(offer: RTCSessionDescription){
         try{
+            if (this.waitForJoinCall){
+                await this.waitForJoinCall;
+            }
             if (!this.peerConnection) return;
             if (!offer) return;
-            // if (!this.peerConnection.)
-            await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
-            const answer = await this.peerConnection.createAnswer()
-            await this.peerConnection.setLocalDescription(answer)
-            this.#sendMessage("answer", answer)
-            await this.#processIceCandidates()
-        }catch{
-            console.log("failed to create answer")
+            // if (this.peerConnection.signalingState === "have-local-offer"){
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+                const answer = await this.peerConnection.createAnswer()
+                await this.peerConnection.setLocalDescription(answer)
+                this.#sendMessage("answer", answer)
+                await this.#processIceCandidates()
+                console.log("answer sent")
+            // }
+        }catch(err){
+            console.error("failed to create answer: ", err)
         }
     }
 
@@ -184,29 +228,46 @@ export class Room {
         try{
             if (!this.peerConnection) return;
             if (!answer) return;
-            await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
-            await this.#processIceCandidates()
+            if (this.peerConnection.signalingState === "have-local-offer"){
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
+                await this.#processIceCandidates()
+            }
         }catch (err) {
             console.error("failed to set remote description: ", err)
         }
     }
 
     async #handleIceCandidate(candidate: RTCIceCandidate){
-        if (!this.peerConnection) return;
-        if (this.peerConnection.connectionState == "connected") return;
-        if (this.peerConnection.remoteDescription && this.peerConnection.localDescription && this.peerConnection.remoteDescription.type){
-            await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-        }else{
-            this.#iceCandidate.push(candidate)
+        try{
+            if (!this.peerConnection) return;
+            if (this.peerConnection.connectionState == "connected") return;
+            if (this.peerConnection.remoteDescription && 
+                this.peerConnection.localDescription && 
+                this.peerConnection.remoteDescription.type &&
+                !this.#isProccessingIce
+            ){
+                await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+            }else{
+                console.log("adding ice candidate to queue: ", this.peerConnection.remoteDescription, this.peerConnection.localDescription, this.peerConnection.remoteDescription?.type)
+                this.#iceCandidate.push(candidate)
+            }
+        }catch(err){
+            console.error("failed to add ice candidate: ", err)
         }
     }
     async #processIceCandidates(){
+        this.#isProccessingIce = true;
         while (this.#iceCandidate.length > 0){
-            const candidate = this.#iceCandidate.shift();
-            if (candidate){
-                await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+            try{
+                const candidate = this.#iceCandidate.shift();
+                if (candidate){
+                    await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+                }
+            }catch(err){
+                console.error("failed to add ice candidate: ", err)
             }
         }
+        this.#isProccessingIce = false;
     }
 
     async getMediaStream(){
@@ -256,6 +317,7 @@ export class Room {
     }
 
     #handleUserStatusChange(status: "online" | "offline"){
+        this.userStatus = status;
         this.onUserStatusChange?.(status);
     }
 
@@ -270,10 +332,13 @@ export class Room {
         const socket = new WebSocket(process.env.NEXT_PUBLIC_BACKEND_WS_URL + "ws/rooms/" + this.roomId + "/call");
         this.socket = socket;
         socket.onclose = () => {
-            console.log("socket closed")
+            if (this.#emitOnlineTimeout) {
+                clearInterval(this.#emitOnlineTimeout);
+                this.#emitOnlineTimeout = null
+            }
+            customToast.error("Connection lost", ()=> this.reset(), Infinity);
         }
         socket.onopen = () => {
-            console.log("socket opened")
             this.#sendMessage("join", {
                 access_token: this.accessToken
             })
@@ -316,6 +381,7 @@ export class Room {
                     break;
                 case "user_online":
                     this.#handleUserStatusChange("online");
+                    break;
                 case "user_offline":
                     this.#handleUserStatusChange("offline")
                     break;
@@ -338,8 +404,6 @@ export class Room {
         this.peerConnection?.close();
         this.peerConnection = null;
         this.localStream?.getTracks().forEach((track) => track.stop());
-        this.remoteVideo!.srcObject = null;
-        this.localVideo!.srcObject = null;
         this.socket?.close();
         this.socket = null;
         this.peerConnection = null;
@@ -351,10 +415,18 @@ export class Room {
 }
 
 let room: Room | null = null;
+let initializingRoom: Promise<Room> | null = null;
 
 export async function initRoom(): Room {
+    // if there is an ongoing room initialization, return it
+    if (initializingRoom) return await initializingRoom;
+    // if there is an existing room, return it
     if (room) return room;
-    room = await Room.create();
+    // create a new room initialization
+    initializingRoom = (async () => {return await Room.create();})()
+    // wait for the room to be initialized
+    room = await initializingRoom
+    // return the room
     return room;
 }
 
